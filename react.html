@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Context API &amp; Redux Notes</title>
+  <meta name="description" content="React state management notes: Context API, useReducer, Redux Toolkit, async thunks, RTK Query, and using them in Next.js.">
+  <script>try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('fsn-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <style>
+    .part-banner { border-radius: 18px; padding: 1.4rem 1.5rem; margin-top: 2.5rem; color: #fff; display: flex; gap: 1rem; align-items: center; }
+    .part-banner i { font-size: 2rem; }
+    .part-banner h3 { margin: 0; font-weight: 800; }
+    .part-banner p { margin: 0; opacity: .9; font-size: .93rem; }
+    .part-banner.ctx { background: linear-gradient(135deg, #0ea5e9, #6366f1); }
+    .part-banner.rdx { background: linear-gradient(135deg, #764abc, #a855f7); }
+    .demo-box { border: 1px solid var(--bs-border-color); border-radius: 14px; padding: 1rem; background: var(--bs-body-bg); }
+    .demo-log { font-family: var(--font-mono); font-size: .78rem; background: var(--code-bg); color: #c9d1d9; border-radius: 10px; padding: .6rem .8rem; height: 170px; overflow-y: auto; }
+    .demo-log .a { color: #d2a8ff; } .demo-log .s { color: #7ee787; }
+  </style>
+</head>
+<body class="page-react" data-page="react">
+<div id="site-nav"></div>
+
+<header class="hero">
+  <div class="container-xl">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb small mb-3"><li class="breadcrumb-item"><a href="index.html">Home</a></li><li class="breadcrumb-item active">Context &amp; Redux</li></ol></nav>
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <div class="hero-icon"><i class="bi bi-diagram-3"></i></div>
+      <div><span class="chip"><i class="bi bi-5-circle"></i> Module 5</span></div>
+    </div>
+    <h1>React State: Context API &amp; Redux</h1>
+    <p class="lead">How to share state across many components. First the built-in <b>Context API</b>, then <b>Redux Toolkit</b> for larger apps, including async data, RTK Query and setup in a Next.js App Router project.</p>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <span class="chip"><i class="bi bi-share"></i> Context API</span>
+      <span class="chip"><i class="bi bi-arrow-repeat"></i> useReducer</span>
+      <span class="chip"><i class="bi bi-boxes"></i> Redux Toolkit</span>
+      <span class="chip"><i class="bi bi-cloud-download"></i> RTK Query</span>
+      <span class="chip"><i class="bi bi-window-sidebar"></i> Next.js setup</span>
+    </div>
+  </div>
+</header>
+
+<div class="container-xl">
+  <div class="row g-4">
+    <aside class="col-lg-3 d-none d-lg-block toc-col"><nav class="toc pt-4" data-toc></nav></aside>
+
+    <main class="col-lg-9 notes">
+
+      <div class="level-banner basic"><i class="bi bi-1-circle-fill"></i><div>Level 1 — Basics<small>The problem, Context API fundamentals and typed custom hooks</small></div></div>
+
+      <section class="note-section" id="problem" data-level="basic" data-title="The problem: prop drilling">
+        <h2><span class="sec-icon"><i class="bi bi-arrow-down-circle"></i></span>The problem: prop drilling <span class="lvl basic">Basic</span></h2>
+        <p>In React, data flows <b>down</b> through props. If a deeply nested component needs the logged-in user, every component in between has to pass it along, even components that never use it. This is called <span class="kw">prop drilling</span>.</p>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="diagram h-100 m-0">
+              <div class="diagram-title"><i class="bi bi-x-circle" style="color:var(--lvl-adv)"></i> Without Context — prop drilling</div>
+              <svg class="dg" viewBox="0 0 350 260" role="img" aria-label="App passes user to Layout, which passes it to Sidebar, which passes it to Avatar">
+                <rect x="90" y="10" width="120" height="38" rx="8" class="box-hl"/><text x="150" y="34" text-anchor="middle" class="txt">App (user)</text>
+                <path d="M150 48 L150 75" class="line"/><text x="160" y="66" class="txt-sm">user</text>
+                <rect x="90" y="75" width="120" height="38" rx="8" class="box" style="stroke:#f59e0b"/><text x="150" y="99" text-anchor="middle" class="txt">Layout</text>
+                <path d="M150 113 L150 140" class="line"/><text x="160" y="131" class="txt-sm">user</text>
+                <rect x="90" y="140" width="120" height="38" rx="8" class="box" style="stroke:#f59e0b"/><text x="150" y="164" text-anchor="middle" class="txt">Sidebar</text>
+                <path d="M150 178 L150 205" class="line"/><text x="160" y="196" class="txt-sm">user</text>
+                <rect x="90" y="205" width="120" height="38" rx="8" class="box-hl"/><text x="150" y="229" text-anchor="middle" class="txt">Avatar ✓</text>
+                <text x="225" y="125" class="txt-sm" style="fill:#f59e0b">doesn't</text><text x="225" y="140" class="txt-sm" style="fill:#f59e0b">need it!</text>
+              </svg>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="diagram h-100 m-0">
+              <div class="diagram-title"><i class="bi bi-check-circle" style="color:var(--lvl-basic)"></i> With Context — direct access</div>
+              <svg class="dg" viewBox="0 0 350 260" role="img" aria-label="Provider at top; Avatar reads user directly from context, skipping Layout and Sidebar">
+                <rect x="60" y="10" width="180" height="38" rx="8" class="box-hl"/><text x="150" y="34" text-anchor="middle" class="txt">UserProvider</text>
+                <path d="M150 48 L150 75" class="line-muted"/>
+                <rect x="90" y="75" width="120" height="38" rx="8" class="box"/><text x="150" y="99" text-anchor="middle" class="txt">Layout</text>
+                <path d="M150 113 L150 140" class="line-muted"/>
+                <rect x="90" y="140" width="120" height="38" rx="8" class="box"/><text x="150" y="164" text-anchor="middle" class="txt">Sidebar</text>
+                <path d="M150 178 L150 205" class="line-muted"/>
+                <rect x="90" y="205" width="120" height="38" rx="8" class="box-hl"/><text x="150" y="229" text-anchor="middle" class="txt">Avatar ✓</text>
+                <path d="M240 30 C 290 30, 290 224, 212 224" class="line"/><text x="262" y="130" class="txt-acc">useContext</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="note-section" id="which-tool" data-level="basic" data-title="Which state tool?">
+        <h2><span class="sec-icon"><i class="bi bi-signpost-split"></i></span>Which state tool should I use? <span class="lvl basic">Basic</span></h2>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-diagram-2"></i> Decision guide</div>
+          <div class="flow vertical">
+            <div class="node hl" style="max-width:340px"><i class="bi bi-question-circle"></i>Is the data from the server (API / DB)?<small>Yes → Server Components, SWR / TanStack Query or RTK Query</small></div>
+            <div class="arrow">No, it's UI / client state</div>
+            <div class="node" style="max-width:340px"><i class="bi bi-1-circle"></i>Used by one component (or its child)?<small>Yes → <b>useState</b> / <b>useReducer</b></small></div>
+            <div class="arrow">No, shared widely</div>
+            <div class="node" style="max-width:340px"><i class="bi bi-2-circle"></i>Changes rarely? (theme, user, locale)<small>Yes → <b>Context API</b></small></div>
+            <div class="arrow">No, complex / frequent updates</div>
+            <div class="node ok" style="max-width:340px"><i class="bi bi-3-circle"></i>Big app, many features, devtools, middleware<small>→ <b>Redux Toolkit</b> (or Zustand)</small></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="part-banner ctx"><i class="bi bi-share"></i><div><h3>Part A — Context API</h3><p>Built into React. No libraries needed.</p></div></div>
+
+      <section class="note-section" id="context-basics" data-level="basic" data-title="Context in 3 steps">
+        <h2><span class="sec-icon"><i class="bi bi-share"></i></span>Context in 3 steps <span class="lvl basic">Basic</span></h2>
+        <div class="callout analogy"><i class="bi bi-broadcast"></i><div><strong class="t">Radio station</strong>The <b>Provider</b> is a radio tower broadcasting a value. Any component inside its range can <b>tune in</b> with <code>useContext</code>. Components outside the range only hear the default value.</div></div>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-list-ol"></i> Create → Provide → Consume</div>
+          <div class="flow">
+            <div class="node hl"><i class="bi bi-1-circle"></i>createContext()<small>make the "channel"</small></div>
+            <div class="arrow">wrap tree</div>
+            <div class="node hl"><i class="bi bi-2-circle"></i>&lt;Ctx value={…}&gt;<small>broadcast a value</small></div>
+            <div class="arrow">any child</div>
+            <div class="node ok"><i class="bi bi-3-circle"></i>useContext(Ctx)<small>read the value</small></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="context/ThemeContext.tsx">
+          "use client";
+          import { createContext, useContext, useState, type ReactNode } from "react";
+
+          type Theme = "light" | "dark";
+          type ThemeContextType = { theme: Theme; toggle: () => void };
+
+          // ① CREATE (default value used only when there is no Provider above)
+          const ThemeContext = createContext<ThemeContextType>({ theme: "light", toggle: () => {} });
+
+          // ② PROVIDE
+          export function ThemeProvider({ children }: { children: ReactNode }) {
+            const [theme, setTheme] = useState<Theme>("light");
+            const toggle = () => setTheme((t) => (t === "light" ? "dark" : "light"));
+
+            return (
+              <ThemeContext.Provider value={{ theme, toggle }}>
+                <div data-bs-theme={theme}>{children}</div>
+              </ThemeContext.Provider>
+            );
+          }
+
+          // ③ CONSUME
+          export const useTheme = () => useContext(ThemeContext);
+        </script>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="components/ThemeButton.tsx">
+          "use client";
+          import { useTheme } from "@/context/ThemeContext";
+
+          export default function ThemeButton() {
+            const { theme, toggle } = useTheme();         // 🎉 no props needed
+            return (
+              <button className="btn btn-outline-secondary" onClick={toggle}>
+                <i className={`bi ${theme === "light" ? "bi-moon" : "bi-sun"}`} /> {theme}
+              </button>
+            );
+          }
+        </script>
+        <div class="callout info"><i class="bi bi-stars"></i><div><strong class="t">React 19 shortcut</strong>From React 19 you can render the context itself as the provider: <code>&lt;ThemeContext value={…}&gt;</code> instead of <code>&lt;ThemeContext.Provider value={…}&gt;</code>. React 19 also adds <code>use(ThemeContext)</code>, which works like <code>useContext</code> but can be called inside <code>if</code> statements.</div></div>
+      </section>
+
+      <section class="note-section" id="context-typed" data-level="basic" data-title="Typed context + custom hook">
+        <h2><span class="sec-icon"><i class="bi bi-shield-check"></i></span>Typed context + safe custom hook <span class="lvl basic">Basic</span></h2>
+        <p>A best-practice pattern: default the context to <code>null</code>, and have the custom hook <b>throw a clear error</b> if someone forgets the Provider.</p>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="context/AuthContext.tsx">
+          "use client";
+          import { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from "react";
+
+          type User = { id: number; name: string; role: "user" | "admin" };
+          type AuthContextType = {
+            user: User | null;
+            login: (email: string, password: string) => Promise<void>;
+            logout: () => Promise<void>;
+          };
+
+          const AuthContext = createContext<AuthContextType | null>(null);
+
+          export function AuthProvider({ initialUser, children }: { initialUser: User | null; children: ReactNode }) {
+            const [user, setUser] = useState(initialUser);
+
+            const login = useCallback(async (email: string, password: string) => {
+              const res = await fetch("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+              if (!res.ok) throw new Error("Invalid credentials");
+              setUser(await fetch("/api/auth/me").then((r) => r.json()));
+            }, []);
+
+            const logout = useCallback(async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              setUser(null);
+            }, []);
+
+            // memoize so consumers don't re-render unless user changes
+            const value = useMemo(() => ({ user, login, logout }), [user, login, logout]);
+            return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+          }
+
+          export function useAuth() {
+            const ctx = useContext(AuthContext);
+            if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
+            return ctx;                       // type is AuthContextType (null removed) ✅
+          }
+        </script>
+      </section>
+
+      <div class="level-banner inter"><i class="bi bi-2-circle-fill"></i><div>Level 2 — Intermediate<small>Context + useReducer, Next.js providers, and Redux Toolkit fundamentals</small></div></div>
+
+      <section class="note-section" id="context-reducer" data-level="inter" data-title="Context + useReducer (cart)">
+        <h2><span class="sec-icon"><i class="bi bi-cart3"></i></span>Context + useReducer: a shopping cart <span class="lvl inter">Intermediate</span></h2>
+        <p><code>useReducer</code> moves all the update logic into one pure function. Combined with Context, it gives you a "mini Redux" with no extra library.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-arrow-repeat"></i> reducer(state, action) → newState</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-hand-index"></i>dispatch({ type: "add", item })</div>
+            <div class="arrow">action</div>
+            <div class="node hl"><i class="bi bi-cpu"></i>cartReducer<small>pure function</small></div>
+            <div class="arrow">returns</div>
+            <div class="node ok"><i class="bi bi-cart-check"></i>new state<small>UI re-renders</small></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="context/CartContext.tsx">
+          "use client";
+          import { createContext, useContext, useReducer, type ReactNode, type Dispatch } from "react";
+
+          type Item = { id: number; name: string; price: number; qty: number };
+          type State = { items: Item[] };
+          type Action =
+            | { type: "add"; item: Omit<Item, "qty"> }
+            | { type: "remove"; id: number }
+            | { type: "setQty"; id: number; qty: number }
+            | { type: "clear" };
+
+          function cartReducer(state: State, action: Action): State {
+            switch (action.type) {
+              case "add": {
+                const exists = state.items.find((i) => i.id === action.item.id);
+                return {
+                  items: exists
+                    ? state.items.map((i) => (i.id === action.item.id ? { ...i, qty: i.qty + 1 } : i))
+                    : [...state.items, { ...action.item, qty: 1 }],
+                };
+              }
+              case "remove":  return { items: state.items.filter((i) => i.id !== action.id) };
+              case "setQty":  return { items: state.items.map((i) => (i.id === action.id ? { ...i, qty: action.qty } : i)) };
+              case "clear":   return { items: [] };
+            }
+          }
+
+          // two contexts: components that only dispatch won't re-render on state change
+          const CartStateCtx = createContext<State | null>(null);
+          const CartDispatchCtx = createContext<Dispatch<Action> | null>(null);
+
+          export function CartProvider({ children }: { children: ReactNode }) {
+            const [state, dispatch] = useReducer(cartReducer, { items: [] });
+            return (
+              <CartStateCtx.Provider value={state}>
+                <CartDispatchCtx.Provider value={dispatch}>{children}</CartDispatchCtx.Provider>
+              </CartStateCtx.Provider>
+            );
+          }
+
+          export function useCart() {
+            const s = useContext(CartStateCtx);
+            if (!s) throw new Error("useCart must be inside CartProvider");
+            const total = s.items.reduce((sum, i) => sum + i.price * i.qty, 0);
+            return { ...s, total, count: s.items.reduce((n, i) => n + i.qty, 0) };
+          }
+          export function useCartDispatch() {
+            const d = useContext(CartDispatchCtx);
+            if (!d) throw new Error("useCartDispatch must be inside CartProvider");
+            return d;
+          }
+        </script>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="usage">
+          const dispatch = useCartDispatch();
+          <button className="btn btn-primary" onClick={() => dispatch({ type: "add", item: product })}>Add</button>
+
+          const { count, total } = useCart();
+          <span className="badge text-bg-danger">{count}</span> ₹{total}
+        </script>
+      </section>
+
+      <section class="note-section" id="context-nextjs" data-level="inter" data-title="Context in Next.js">
+        <h2><span class="sec-icon"><i class="bi bi-window-sidebar"></i></span>Using Context in Next.js (App Router) <span class="lvl inter">Intermediate</span></h2>
+        <p>Context only works in <b>Client Components</b>. Put all your providers in one <code>"use client"</code> file and wrap <code>{children}</code> with it in the root layout. Server Components passed as <code>children</code> <b>stay</b> Server Components.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-bounding-box"></i> Where providers live</div>
+          <div class="stack">
+            <div class="layer" style="--lc:#6366f1"><i class="bi bi-server"></i><div><b>app/layout.tsx</b> (Server)<small>fetches the session, renders &lt;Providers&gt;</small></div></div>
+            <div class="layer" style="--lc:#f59e0b"><i class="bi bi-laptop"></i><div><b>app/providers.tsx</b> ("use client")<small>ThemeProvider → AuthProvider → CartProvider</small></div></div>
+            <div class="layer" style="--lc:#10b981"><i class="bi bi-file-earmark-richtext"></i><div><b>{children}</b> pages<small>still Server Components ✓</small></div></div>
+          </div>
+        </div>
+        <div class="code-pair">
+          <div>
+            <script type="text/plain" class="code" data-lang="tsx" data-title="app/providers.tsx">
+              "use client";
+              import { ThemeProvider } from "@/context/ThemeContext";
+              import { AuthProvider } from "@/context/AuthContext";
+              import { CartProvider } from "@/context/CartContext";
+
+              export default function Providers({ user, children }: {
+                user: User | null; children: React.ReactNode;
+              }) {
+                return (
+                  <ThemeProvider>
+                    <AuthProvider initialUser={user}>
+                      <CartProvider>{children}</CartProvider>
+                    </AuthProvider>
+                  </ThemeProvider>
+                );
+              }
+            </script>
+          </div>
+          <div>
+            <script type="text/plain" class="code" data-lang="tsx" data-title="app/layout.tsx">
+              import Providers from "./providers";
+              import { getCurrentUser } from "@/lib/auth";
+
+              export default async function RootLayout({ children }: {
+                children: React.ReactNode;
+              }) {
+                const user = await getCurrentUser();   // server-side
+                return (
+                  <html lang="en">
+                    <body>
+                      <Providers user={user}>{children}</Providers>
+                    </body>
+                  </html>
+                );
+              }
+            </script>
+          </div>
+        </div>
+      </section>
+
+      <div class="part-banner rdx"><i class="bi bi-boxes"></i><div><h3>Part B — Redux Toolkit</h3><p>A predictable, centralized store for large apps. Redux Toolkit (RTK) is the official, modern way to write Redux.</p></div></div>
+
+      <section class="note-section" id="redux-concepts" data-level="inter" data-title="Redux core concepts">
+        <h2><span class="sec-icon"><i class="bi bi-boxes"></i></span>Redux core concepts <span class="lvl inter">Intermediate</span></h2>
+        <div class="callout analogy"><i class="bi bi-bank"></i><div><strong class="t">Bank analogy</strong>The <b>store</b> is the bank vault, the single source of truth. You can't walk in and change your balance. You fill in a <b>deposit slip</b> (an <b>action</b>) and hand it to the <b>teller</b> (<b>dispatch</b>). The bank's <b>rules</b> (the <b>reducer</b>) calculate the new balance. You check your balance through the <b>app</b> (a <b>selector</b>).</div></div>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-arrow-repeat"></i> One-way data flow</div>
+          <svg class="dg" viewBox="0 0 640 300" role="img" aria-label="Redux cycle: UI dispatches action, store runs reducer, reducer returns new state, selector reads state into UI">
+            <defs><marker id="rah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+            <rect x="240" y="10" width="160" height="56" rx="12" class="box-hl"/><text x="320" y="36" text-anchor="middle" class="txt">🖥️ UI / Component</text><text x="320" y="54" text-anchor="middle" class="txt-sm">user clicks "Add"</text>
+            <rect x="470" y="120" width="160" height="56" rx="12" class="box"/><text x="550" y="146" text-anchor="middle" class="txt">📨 Action</text><text x="550" y="164" text-anchor="middle" class="txt-sm">{ type: "cart/add" }</text>
+            <rect x="240" y="230" width="160" height="56" rx="12" class="box-hl"/><text x="320" y="256" text-anchor="middle" class="txt">⚙️ Reducer</text><text x="320" y="274" text-anchor="middle" class="txt-sm">(state, action) → new</text>
+            <rect x="10" y="120" width="160" height="56" rx="12" class="box"/><text x="90" y="146" text-anchor="middle" class="txt">🏦 Store (state)</text><text x="90" y="164" text-anchor="middle" class="txt-sm">single source of truth</text>
+            <path d="M400 40 C 500 40, 550 70, 550 118" class="line" marker-end="url(#rah)"/><text x="500" y="56" class="txt-acc">dispatch</text>
+            <path d="M550 176 C 550 240, 480 258, 402 258" class="line" marker-end="url(#rah)"/><text x="500" y="240" class="txt-acc">store calls</text>
+            <path d="M240 258 C 150 258, 90 230, 90 178" class="line" marker-end="url(#rah)"/><text x="110" y="240" class="txt-acc">new state</text>
+            <path d="M90 120 C 90 60, 150 40, 238 40" class="line" marker-end="url(#rah)"/><text x="90" y="56" class="txt-acc">useSelector</text>
+          </svg>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-safe"></i></div><h5>Store</h5><p>One object that holds the whole app state.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-envelope"></i></div><h5>Action</h5><p>A plain object describing <i>what happened</i>: <code>{ type, payload }</code>.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-cpu"></i></div><h5>Reducer</h5><p>A pure function that computes the next state. No side effects.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-send"></i></div><h5>Dispatch</h5><p>The only way to send an action to the store.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-eyedropper"></i></div><h5>Selector</h5><p>A function that reads a piece of state: <code>s =&gt; s.cart.items</code>.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-scissors"></i></div><h5>Slice</h5><p>The state, reducers and actions for one feature, created together with RTK.</p></div></div>
+        </div>
+
+        <h3><i class="bi bi-play-circle"></i> Try it: a live mini Redux store</h3>
+        <p>This demo runs a tiny Redux-style store in plain JavaScript on this page. Click the buttons and watch each action move through the reducer to produce new state.</p>
+        <div class="demo-box">
+          <div class="row g-3 align-items-center">
+            <div class="col-md-5 text-center">
+              <div class="small text-body-secondary">state.counter.value</div>
+              <div id="demoValue" class="display-4 fw-bold" style="color:var(--accent)">0</div>
+              <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <button class="btn btn-outline-secondary btn-sm" data-act="decrement"><i class="bi bi-dash"></i> decrement</button>
+                <button class="btn btn-primary btn-sm" data-act="increment" style="background:var(--accent);border-color:var(--accent)"><i class="bi bi-plus"></i> increment</button>
+                <button class="btn btn-outline-secondary btn-sm" data-act="incrementByAmount"><i class="bi bi-plus-circle"></i> +5</button>
+                <button class="btn btn-outline-danger btn-sm" data-act="reset"><i class="bi bi-arrow-counterclockwise"></i> reset</button>
+              </div>
+            </div>
+            <div class="col-md-7">
+              <div class="small fw-semibold mb-1"><i class="bi bi-terminal"></i> Action log</div>
+              <div class="demo-log" id="demoLog" aria-live="polite"><span class="text-secondary">// click a button…</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="note-section" id="rtk-setup" data-level="inter" data-title="Redux Toolkit setup (Next.js)">
+        <h2><span class="sec-icon"><i class="bi bi-gear"></i></span>Redux Toolkit setup in Next.js <span class="lvl inter">Intermediate</span></h2>
+        <script type="text/plain" class="code" data-lang="bash" data-title="terminal">
+          npm install @reduxjs/toolkit react-redux
+        </script>
+        <div class="diagram tree-wrap">
+          <div class="diagram-title"><i class="bi bi-folder"></i> Files we'll create</div>
+          <ul class="tree">
+            <li><i class="bi bi-folder2-open"></i> lib/
+              <ul>
+                <li><i class="bi bi-filetype-ts"></i> store.ts <span class="cm">← makeStore() + types</span></li>
+                <li><i class="bi bi-filetype-ts"></i> hooks.ts <span class="cm">← typed useAppDispatch / useAppSelector</span></li>
+                <li><i class="bi bi-folder2-open"></i> features/
+                  <ul><li><i class="bi bi-filetype-ts"></i> counter/counterSlice.ts</li><li><i class="bi bi-filetype-ts"></i> cart/cartSlice.ts</li></ul></li>
+              </ul></li>
+            <li><i class="bi bi-folder2-open"></i> app/
+              <ul><li><i class="bi bi-filetype-tsx"></i> StoreProvider.tsx <span class="cm">← "use client" wrapper</span></li><li><i class="bi bi-filetype-tsx"></i> layout.tsx</li></ul></li>
+          </ul>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="lib/store.ts">
+          import { configureStore } from "@reduxjs/toolkit";
+          import counterReducer from "./features/counter/counterSlice";
+          import cartReducer from "./features/cart/cartSlice";
+
+          // A FUNCTION, not a global store → a fresh store per request on the server
+          export const makeStore = () =>
+            configureStore({
+              reducer: {
+                counter: counterReducer,
+                cart: cartReducer,
+              },
+              // devTools is enabled automatically in development
+            });
+
+          export type AppStore = ReturnType<typeof makeStore>;
+          export type RootState = ReturnType<AppStore["getState"]>;
+          export type AppDispatch = AppStore["dispatch"];
+        </script>
+        <script type="text/plain" class="code" data-lang="ts" data-title="lib/hooks.ts">
+          import { useDispatch, useSelector, useStore } from "react-redux";
+          import type { AppDispatch, AppStore, RootState } from "./store";
+
+          // use these everywhere instead of plain useDispatch / useSelector
+          export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
+          export const useAppSelector = useSelector.withTypes<RootState>();
+          export const useAppStore = useStore.withTypes<AppStore>();
+        </script>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="app/StoreProvider.tsx">
+          "use client";
+          import { useRef } from "react";
+          import { Provider } from "react-redux";
+          import { makeStore, type AppStore } from "@/lib/store";
+
+          export default function StoreProvider({ children }: { children: React.ReactNode }) {
+            const storeRef = useRef<AppStore | null>(null);
+            if (!storeRef.current) {
+              storeRef.current = makeStore();          // created once per browser tab
+            }
+            return <Provider store={storeRef.current}>{children}</Provider>;
+          }
+
+          // app/layout.tsx →  <body><StoreProvider>{children}</StoreProvider></body>
+        </script>
+        <div class="callout warn"><i class="bi bi-exclamation-triangle"></i><div><strong class="t">Next.js rules for Redux</strong>
+          <ul class="mb-0">
+            <li><b>No global store variable.</b> On the server, a global store would be shared between different users' requests. Always use <code>makeStore()</code>.</li>
+            <li>Server Components <b>can't</b> use Redux hooks. Only Client Components can read the store.</li>
+            <li>Keep server data in Server Components or RTK Query. Use Redux for <b>client</b> state such as the cart, UI and filters.</li>
+          </ul></div></div>
+      </section>
+
+      <section class="note-section" id="slices" data-level="inter" data-title="createSlice &amp; using it">
+        <h2><span class="sec-icon"><i class="bi bi-scissors"></i></span>createSlice &amp; using it in components <span class="lvl inter">Intermediate</span></h2>
+        <p><code>createSlice</code> generates action creators and action types from your reducers. It uses <b>Immer</b>, so you can write code that looks like mutation (<code>state.value += 1</code>) and it still produces safe immutable updates.</p>
+        <script type="text/plain" class="code" data-lang="ts" data-title="lib/features/cart/cartSlice.ts">
+          import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+          import type { RootState } from "@/lib/store";
+
+          type CartItem = { id: number; name: string; price: number; qty: number };
+          type CartState = { items: CartItem[]; isOpen: boolean };
+
+          const initialState: CartState = { items: [], isOpen: false };
+
+          const cartSlice = createSlice({
+            name: "cart",                                 // action types: "cart/addItem", ...
+            initialState,
+            reducers: {
+              addItem(state, action: PayloadAction<Omit<CartItem, "qty">>) {
+                const item = state.items.find((i) => i.id === action.payload.id);
+                if (item) item.qty += 1;                   // ✅ "mutating" is OK thanks to Immer
+                else state.items.push({ ...action.payload, qty: 1 });
+              },
+              removeItem(state, action: PayloadAction<number>) {
+                state.items = state.items.filter((i) => i.id !== action.payload);
+              },
+              updateQty(state, action: PayloadAction<{ id: number; qty: number }>) {
+                const item = state.items.find((i) => i.id === action.payload.id);
+                if (item) item.qty = Math.max(1, action.payload.qty);
+              },
+              toggleCart(state) { state.isOpen = !state.isOpen; },
+              clearCart: () => initialState,
+            },
+          });
+
+          export const { addItem, removeItem, updateQty, toggleCart, clearCart } = cartSlice.actions;
+          export default cartSlice.reducer;
+
+          // selectors live next to the slice
+          export const selectCartItems = (s: RootState) => s.cart.items;
+          export const selectCartCount = (s: RootState) => s.cart.items.reduce((n, i) => n + i.qty, 0);
+        </script>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="components/CartButton.tsx">
+          "use client";
+          import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+          import { addItem, selectCartCount, toggleCart } from "@/lib/features/cart/cartSlice";
+
+          export function AddToCart({ product }: { product: { id: number; name: string; price: number } }) {
+            const dispatch = useAppDispatch();
+            return (
+              <button className="btn btn-primary" onClick={() => dispatch(addItem(product))}>
+                <i className="bi bi-cart-plus" /> Add to cart
+              </button>
+            );
+          }
+
+          export function CartBadge() {
+            const count = useAppSelector(selectCartCount);   // re-renders only when count changes
+            const dispatch = useAppDispatch();
+            return (
+              <button className="btn btn-outline-dark position-relative" onClick={() => dispatch(toggleCart())}>
+                <i className="bi bi-cart3" />
+                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{count}</span>
+              </button>
+            );
+          }
+        </script>
+        <div class="vs">
+          <div class="side"><h5><i class="bi bi-hourglass" style="color:var(--lvl-adv)"></i> Old Redux</h5><ul><li>Action type constants</li><li>Action creator functions</li><li>switch-case reducers with spread</li><li>Manual store + middleware setup</li></ul></div>
+          <div class="mid">VS</div>
+          <div class="side" style="border-color:var(--accent)"><h5><i class="bi bi-lightning" style="color:var(--accent)"></i> Redux Toolkit</h5><ul><li><code>createSlice</code> does all of it</li><li>Immer for "mutable" updates</li><li><code>configureStore</code> includes thunk and devtools</li><li>Much less code</li></ul></div>
+        </div>
+      </section>
+
+      <div class="level-banner adv"><i class="bi bi-3-circle-fill"></i><div>Level 3 — Advanced<small>Async thunks, RTK Query, memoized selectors, entity adapters, middleware and performance</small></div></div>
+
+      <section class="note-section" id="thunks" data-level="adv" data-title="Async logic: createAsyncThunk">
+        <h2><span class="sec-icon"><i class="bi bi-hourglass-split"></i></span>Async logic with createAsyncThunk <span class="lvl adv">Advanced</span></h2>
+        <p>Reducers must stay pure, so API calls go in <span class="kw">thunks</span>. <code>createAsyncThunk</code> dispatches <code>pending</code>, then <code>fulfilled</code> or <code>rejected</code>, automatically.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-diagram-3"></i> Thunk lifecycle</div>
+          <div class="flow">
+            <div class="node hl"><i class="bi bi-play"></i>dispatch(fetchProducts())</div>
+            <div class="arrow">immediately</div>
+            <div class="node"><i class="bi bi-hourglass"></i>…/pending<small>status = "loading"</small></div>
+            <div class="arrow">API resolves</div>
+            <div class="node ok"><i class="bi bi-check-circle"></i>…/fulfilled<small>save data</small></div>
+            <div class="node bad"><i class="bi bi-x-circle"></i>…/rejected<small>save error</small></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="lib/features/products/productsSlice.ts">
+          import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+
+          type Product = { id: number; name: string; price: number };
+          type State = { items: Product[]; status: "idle" | "loading" | "succeeded" | "failed"; error?: string };
+
+          export const fetchProducts = createAsyncThunk<Product[], { q?: string } | void, { rejectValue: string }>(
+            "products/fetch",
+            async (args, { rejectWithValue }) => {
+              const res = await fetch(`/api/products?q=${args?.q ?? ""}`);
+              if (!res.ok) return rejectWithValue(`HTTP ${res.status}`);
+              return res.json();
+            }
+          );
+
+          const productsSlice = createSlice({
+            name: "products",
+            initialState: { items: [], status: "idle" } as State,
+            reducers: {},
+            extraReducers: (builder) => {
+              builder
+                .addCase(fetchProducts.pending,   (s) => { s.status = "loading"; s.error = undefined; })
+                .addCase(fetchProducts.fulfilled, (s, a) => { s.status = "succeeded"; s.items = a.payload; })
+                .addCase(fetchProducts.rejected,  (s, a) => { s.status = "failed"; s.error = a.payload ?? a.error.message; });
+            },
+          });
+          export default productsSlice.reducer;
+        </script>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="components/ProductList.tsx">
+          "use client";
+          import { useEffect } from "react";
+          import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+          import { fetchProducts } from "@/lib/features/products/productsSlice";
+
+          export default function ProductList() {
+            const dispatch = useAppDispatch();
+            const { items, status, error } = useAppSelector((s) => s.products);
+
+            useEffect(() => { if (status === "idle") dispatch(fetchProducts()); }, [status, dispatch]);
+
+            if (status === "loading") return <div className="spinner-border" />;
+            if (status === "failed") return <div className="alert alert-danger">{error}</div>;
+            return <ul className="list-group">{items.map((p) => <li key={p.id} className="list-group-item">{p.name}</li>)}</ul>;
+          }
+        </script>
+      </section>
+
+      <section class="note-section" id="rtk-query" data-level="adv" data-title="RTK Query">
+        <h2><span class="sec-icon"><i class="bi bi-cloud-download"></i></span>RTK Query: data fetching &amp; caching <span class="lvl adv">Advanced</span></h2>
+        <p>Writing thunks for every endpoint gets repetitive. <span class="kw">RTK Query</span> generates hooks that handle <b>fetching, caching, loading states, deduplication and re-fetching</b> for you.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-tags"></i> Tag-based cache invalidation</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-list"></i>useGetProductsQuery()<small>provides tag "Product"</small></div>
+            <div class="arrow">cached</div>
+            <div class="node hl"><i class="bi bi-plus-circle"></i>useAddProductMutation()<small>invalidates "Product"</small></div>
+            <div class="arrow">auto re-fetch</div>
+            <div class="node ok"><i class="bi bi-arrow-clockwise"></i>List updates by itself</div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="lib/services/productsApi.ts">
+          import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+          type Product = { id: number; name: string; price: number };
+
+          export const productsApi = createApi({
+            reducerPath: "productsApi",
+            baseQuery: fetchBaseQuery({ baseUrl: "/api" }),
+            tagTypes: ["Product"],
+            endpoints: (build) => ({
+              getProducts: build.query<Product[], string | void>({
+                query: (q) => `products${q ? `?q=${q}` : ""}`,
+                providesTags: ["Product"],
+              }),
+              getProduct: build.query<Product, number>({
+                query: (id) => `products/${id}`,
+                providesTags: (_r, _e, id) => [{ type: "Product", id }],
+              }),
+              addProduct: build.mutation<Product, Omit<Product, "id">>({
+                query: (body) => ({ url: "products", method: "POST", body }),
+                invalidatesTags: ["Product"],
+              }),
+              deleteProduct: build.mutation<void, number>({
+                query: (id) => ({ url: `products/${id}`, method: "DELETE" }),
+                invalidatesTags: ["Product"],
+              }),
+            }),
+          });
+
+          // auto-generated hooks 🎉
+          export const { useGetProductsQuery, useGetProductQuery, useAddProductMutation, useDeleteProductMutation } = productsApi;
+        </script>
+        <script type="text/plain" class="code" data-lang="ts" data-title="lib/store.ts (register the API)">
+          export const makeStore = () =>
+            configureStore({
+              reducer: {
+                cart: cartReducer,
+                [productsApi.reducerPath]: productsApi.reducer,
+              },
+              middleware: (getDefault) => getDefault().concat(productsApi.middleware),
+            });
+        </script>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="components/Products.tsx">
+          "use client";
+          import { useGetProductsQuery, useAddProductMutation } from "@/lib/services/productsApi";
+
+          export default function Products() {
+            const { data = [], isLoading, isError, refetch } = useGetProductsQuery();
+            const [addProduct, { isLoading: saving }] = useAddProductMutation();
+
+            if (isLoading) return <div className="spinner-border" />;
+            if (isError) return <button className="btn btn-warning" onClick={refetch}>Retry</button>;
+
+            return (
+              <>
+                <button className="btn btn-success mb-3" disabled={saving}
+                        onClick={() => addProduct({ name: "New item", price: 499 })}>
+                  {saving ? "Saving…" : "Add product"}
+                </button>
+                <ul className="list-group">{data.map((p) => <li key={p.id} className="list-group-item">{p.name}</li>)}</ul>
+              </>
+            );
+          }
+        </script>
+      </section>
+
+      <section class="note-section" id="selectors" data-level="adv" data-title="Memoized selectors &amp; entities">
+        <h2><span class="sec-icon"><i class="bi bi-funnel"></i></span>Memoized selectors &amp; normalized state <span class="lvl adv">Advanced</span></h2>
+        <h3><i class="bi bi-memory"></i> createSelector</h3>
+        <p>If a selector returns a <b>new</b> array or object on every call (from <code>filter</code> or <code>map</code>), the component re-renders on <b>every</b> store change. <code>createSelector</code> memoizes the result, so it is only recalculated when its inputs change.</p>
+        <script type="text/plain" class="code" data-lang="ts">
+          import { createSelector } from "@reduxjs/toolkit";
+
+          const selectItems = (s: RootState) => s.cart.items;
+
+          export const selectCartTotal = createSelector([selectItems], (items) =>
+            items.reduce((sum, i) => sum + i.price * i.qty, 0)
+          );
+
+          export const selectExpensiveItems = createSelector(
+            [selectItems, (_s: RootState, min: number) => min],
+            (items, min) => items.filter((i) => i.price >= min)
+          );
+          // usage: useAppSelector((s) => selectExpensiveItems(s, 1000))
+        </script>
+        <h3><i class="bi bi-grid-3x3-gap"></i> createEntityAdapter (normalized data)</h3>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-arrow-left-right"></i> Array → normalized</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-list-ol"></i>[ {id:1,…}, {id:2,…} ]<small>find() is O(n)</small></div>
+            <div class="arrow">normalize</div>
+            <div class="node ok"><i class="bi bi-grid"></i>{ ids: [1,2], entities: {1:{…}, 2:{…}} }<small>lookup is O(1)</small></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts">
+          import { createEntityAdapter, createSlice } from "@reduxjs/toolkit";
+
+          const todosAdapter = createEntityAdapter<Todo>();     // uses todo.id by default
+
+          const todosSlice = createSlice({
+            name: "todos",
+            initialState: todosAdapter.getInitialState({ filter: "all" as "all" | "done" }),
+            reducers: {
+              todoAdded: todosAdapter.addOne,
+              todosReceived: todosAdapter.setAll,
+              todoUpdated: todosAdapter.updateOne,               // payload: { id, changes }
+              todoRemoved: todosAdapter.removeOne,
+            },
+          });
+
+          export const { selectAll: selectAllTodos, selectById: selectTodoById } =
+            todosAdapter.getSelectors((s: RootState) => s.todos);
+        </script>
+      </section>
+
+      <section class="note-section" id="middleware" data-level="adv" data-title="Middleware &amp; listeners">
+        <h2><span class="sec-icon"><i class="bi bi-funnel-fill"></i></span>Middleware, listeners &amp; persistence <span class="lvl adv">Advanced</span></h2>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-filter"></i> Middleware sits between dispatch and reducer</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-send"></i>dispatch(action)</div>
+            <div class="arrow"></div>
+            <div class="node hl"><i class="bi bi-journal-text"></i>logger</div>
+            <div class="arrow"></div>
+            <div class="node hl"><i class="bi bi-hourglass"></i>thunk</div>
+            <div class="arrow"></div>
+            <div class="node hl"><i class="bi bi-ear"></i>listener</div>
+            <div class="arrow"></div>
+            <div class="node ok"><i class="bi bi-cpu"></i>reducer</div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="Listener middleware: side effects in response to actions">
+          import { createListenerMiddleware } from "@reduxjs/toolkit";
+          import { addItem, removeItem, clearCart } from "./features/cart/cartSlice";
+
+          export const listener = createListenerMiddleware();
+
+          // save cart to localStorage whenever it changes
+          listener.startListening({
+            predicate: (action) => [addItem.type, removeItem.type, clearCart.type].includes(action.type),
+            effect: async (_action, api) => {
+              const { cart } = api.getState() as RootState;
+              try { localStorage.setItem("cart", JSON.stringify(cart.items)); } catch {}
+            },
+          });
+
+          // store.ts → middleware: (gDM) => gDM().prepend(listener.middleware)
+        </script>
+        <script type="text/plain" class="code" data-lang="ts" data-title="Custom middleware (logger)">
+          import type { Middleware } from "@reduxjs/toolkit";
+
+          export const logger: Middleware = (store) => (next) => (action) => {
+            console.group((action as { type: string }).type);
+            console.log("prev", store.getState());
+            const result = next(action);          // pass to next middleware / reducer
+            console.log("next", store.getState());
+            console.groupEnd();
+            return result;
+          };
+        </script>
+        <div class="callout tip"><i class="bi bi-tools"></i><div><strong class="t">Redux DevTools</strong>Install the browser extension to see every action, inspect the state diff, and use "time travel" to step back through actions. <code>configureStore</code> turns it on automatically in development.</div></div>
+      </section>
+
+      <section class="note-section" id="performance" data-level="adv" data-title="Performance &amp; pitfalls">
+        <h2><span class="sec-icon"><i class="bi bi-speedometer2"></i></span>Performance &amp; common pitfalls <span class="lvl adv">Advanced</span></h2>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="n-card"><div class="ic" style="color:var(--lvl-adv)"><i class="bi bi-exclamation-triangle"></i></div><h5>Context: every consumer re-renders</h5><p>When the Provider's <code>value</code> changes, <b>all</b> <code>useContext</code> consumers re-render. Split contexts (state vs dispatch) and wrap the value in <code>useMemo</code>.</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic" style="color:var(--lvl-adv)"><i class="bi bi-exclamation-triangle"></i></div><h5>Inline object as value</h5><p><code>value={{ user }}</code> creates a new object on every render, so every consumer re-renders. Memoize it.</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic" style="color:var(--lvl-basic)"><i class="bi bi-check-circle"></i></div><h5>Redux: select small pieces</h5><p><code>useAppSelector(s =&gt; s.cart.items.length)</code> is better than selecting the whole <code>s.cart</code>.</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic" style="color:var(--lvl-basic)"><i class="bi bi-check-circle"></i></div><h5>Keep state serializable</h5><p>No class instances, Dates, Maps or functions in Redux. Store ISO strings and plain objects.</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic" style="color:var(--lvl-adv)"><i class="bi bi-x-octagon"></i></div><h5>Don't put everything in Redux</h5><p>Form inputs and a modal's open state usually belong in local <code>useState</code>.</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic" style="color:var(--lvl-adv)"><i class="bi bi-x-octagon"></i></div><h5>Don't duplicate server data</h5><p>Use RTK Query or TanStack Query instead of copying API data into slices by hand.</p></div></div>
+        </div>
+        <div class="code-pair mt-3">
+          <div>
+            <div class="lbl bad"><i class="bi bi-x-circle-fill"></i> Re-renders all consumers every time</div>
+            <script type="text/plain" class="code" data-lang="tsx">
+              <AuthContext.Provider value={{ user, login, logout }}>
+            </script>
+          </div>
+          <div>
+            <div class="lbl good"><i class="bi bi-check-circle-fill"></i> Stable reference</div>
+            <script type="text/plain" class="code" data-lang="tsx">
+              const value = useMemo(() => ({ user, login, logout }), [user, login, logout]);
+              <AuthContext.Provider value={value}>
+            </script>
+          </div>
+        </div>
+      </section>
+
+      <section class="note-section" id="compare" data-level="adv" data-title="Context vs Redux">
+        <h2><span class="sec-icon"><i class="bi bi-layout-split"></i></span>Context vs Redux — side by side <span class="lvl adv">Advanced</span></h2>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Aspect</th><th><i class="bi bi-share"></i> Context API</th><th><i class="bi bi-boxes"></i> Redux Toolkit</th></tr></thead>
+            <tbody>
+              <tr><td>Install</td><td>Built into React</td><td><code>@reduxjs/toolkit react-redux</code></td></tr>
+              <tr><td>Purpose</td><td>A way to <b>pass</b> values down the tree</td><td>A full <b>state management</b> system</td></tr>
+              <tr><td>Re-renders</td><td>All consumers when the value changes</td><td>Only components whose selected slice changed</td></tr>
+              <tr><td>Boilerplate</td><td>Minimal</td><td>Small with RTK</td></tr>
+              <tr><td>DevTools / time travel</td><td class="no">✗</td><td class="yes">✓</td></tr>
+              <tr><td>Middleware / side effects</td><td>Manual (useEffect)</td><td>Thunks, listeners, RTK Query</td></tr>
+              <tr><td>Best for</td><td>Theme, auth user, locale, small/medium apps</td><td>Large apps, complex shared state, many developers</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout info"><i class="bi bi-info-circle"></i><div><strong class="t">Other options</strong><b>Zustand</b> is tiny and hook-based, and <b>Jotai</b> builds state from small atoms. Both are popular lighter alternatives. In Next.js App Router apps, much of the "global" state moves to the server (Server Components + caching), so you often need less client state than you expect.</div></div>
+      </section>
+
+      <div class="level-banner basic" style="--lvl-basic:#8b5cf6"><i class="bi bi-star-fill" style="color:#8b5cf6"></i><div>Practice &amp; Review<small>Quiz, interview questions and a cheat sheet</small></div></div>
+
+      <section class="note-section" id="interview" data-level="extra" data-title="Interview questions">
+        <h2><span class="sec-icon"><i class="bi bi-chat-square-quote"></i></span>Interview questions</h2>
+        <div class="quiz" data-answer="a" data-explain="Reducers must be pure: same input → same output, no API calls or random values.">
+          <p class="q">Where should an API call go in Redux Toolkit?</p>
+          <button data-opt="a">In a thunk (createAsyncThunk) or RTK Query endpoint</button>
+          <button data-opt="b">Inside the reducer function</button>
+          <button data-opt="c">Inside the initialState</button>
+        </div>
+        <div class="quiz" data-answer="c" data-explain="Context needs useContext/useState, which only run in Client Components.">
+          <p class="q">In the Next.js App Router, a Context Provider must be in…</p>
+          <button data-opt="a">A Server Component</button>
+          <button data-opt="b">next.config.ts</button>
+          <button data-opt="c">A "use client" component</button>
+        </div>
+        <div class="accordion accordion-notes" id="faqRX">
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#rx1">Is Context a state management tool?</button></h2>
+            <div id="rx1" class="accordion-collapse collapse" data-bs-parent="#faqRX"><div class="accordion-body">Not exactly. Context is a <i>transport</i> mechanism: it passes a value down the tree. The state itself lives in <code>useState</code> or <code>useReducer</code>. Together they act as state management.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#rx2">Why must reducers be pure?</button></h2>
+            <div id="rx2" class="accordion-collapse collapse" data-bs-parent="#faqRX"><div class="accordion-body">Pure reducers are predictable and testable, and they make time-travel debugging possible. The same state and action always produce the same result.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#rx3">How can RTK let you "mutate" state?</button></h2>
+            <div id="rx3" class="accordion-collapse collapse" data-bs-parent="#faqRX"><div class="accordion-body">RTK uses Immer. You change a draft proxy, and Immer records the changes and produces a new immutable state object.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#rx4">Why makeStore() instead of a global store in Next.js?</button></h2>
+            <div id="rx4" class="accordion-collapse collapse" data-bs-parent="#faqRX"><div class="accordion-body">The Next.js server handles many users' requests in one process. A module-level store would leak one user's state to another. Creating the store per request (or per client tab, using <code>useRef</code>) prevents that.</div></div></div>
+        </div>
+        <h3><i class="bi bi-pencil-square"></i> Practice projects</h3>
+        <ol class="steps">
+          <li><b>Theme + language switcher</b>Two separate contexts with typed custom hooks.</li>
+          <li><b>Cart with Context + useReducer</b>Then rebuild it with Redux Toolkit and compare.</li>
+          <li><b>Product admin with RTK Query</b>List, add and delete products against your Next.js API (see the <a href="backend.html">Backend page</a>), with tag invalidation.</li>
+        </ol>
+      </section>
+
+      <section class="note-section" id="cheatsheet" data-level="extra" data-title="Cheat sheet">
+        <h2><span class="sec-icon"><i class="bi bi-journal-code"></i></span>Cheat sheet</h2>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-share"></i> Context</h6><ul>
+            <li><code>createContext&lt;T|null&gt;(null)</code><span>create</span></li><li><code>&lt;Ctx.Provider value&gt;</code><span>provide</span></li><li><code>useContext(Ctx)</code><span>consume</span></li><li><code>useReducer(fn, init)</code><span>complex state</span></li><li><code>useMemo(() =&gt; value)</code><span>stable value</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-boxes"></i> Redux Toolkit</h6><ul>
+            <li><code>configureStore()</code><span>store</span></li><li><code>createSlice()</code><span>state + reducers</span></li><li><code>PayloadAction&lt;T&gt;</code><span>typed action</span></li><li><code>useAppSelector / Dispatch</code><span>hooks</span></li><li><code>&lt;Provider store&gt;</code><span>connect</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-hourglass-split"></i> Async</h6><ul>
+            <li><code>createAsyncThunk()</code><span>thunk</span></li><li><code>extraReducers</code><span>handle it</span></li><li><code>rejectWithValue</code><span>typed error</span></li><li><code>.unwrap()</code><span>await result</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-cloud-download"></i> RTK Query</h6><ul>
+            <li><code>createApi()</code><span>api slice</span></li><li><code>build.query / mutation</code><span>endpoints</span></li><li><code>providesTags</code><span>cache tag</span></li><li><code>invalidatesTags</code><span>refetch</span></li></ul></div></div>
+        </div>
+      </section>
+
+      <div class="row g-3 pager my-4">
+        <div class="col-md-6"><a href="typescript.html"><small><i class="bi bi-arrow-left"></i> Previous</small><b>TypeScript</b></a></div>
+        <div class="col-md-6 text-md-end"><a href="index.html"><small>Back to <i class="bi bi-house"></i></small><b>Home &amp; roadmap</b></a></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<button class="toc-fab d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas"><i class="bi bi-list-ul me-1"></i> Contents</button>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocLabel">
+  <div class="offcanvas-header"><h5 class="offcanvas-title" id="tocLabel">Context &amp; Redux notes</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
+  <div class="offcanvas-body"><nav class="toc" data-toc style="position:static;max-height:none"></nav></div>
+</div>
+
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="assets/js/main.js"></script>
+<script>
+  // Live mini Redux demo — same ideas as Redux, in ~30 lines of plain JS
+  (function () {
+    function createStore(reducer) {
+      let state = reducer(undefined, { type: "@@INIT" });
+      const listeners = [];
+      return {
+        getState: () => state,
+        dispatch(action) { state = reducer(state, action); listeners.forEach((l) => l()); return action; },
+        subscribe(l) { listeners.push(l); }
+      };
+    }
+    function counterReducer(state = { value: 0 }, action) {
+      switch (action.type) {
+        case "counter/increment": return { ...state, value: state.value + 1 };
+        case "counter/decrement": return { ...state, value: state.value - 1 };
+        case "counter/incrementByAmount": return { ...state, value: state.value + action.payload };
+        case "counter/reset": return { value: 0 };
+        default: return state;
+      }
+    }
+    const store = createStore(counterReducer);
+    const valueEl = document.getElementById("demoValue");
+    const logEl = document.getElementById("demoLog");
+    let first = true;
+    store.subscribe(() => { valueEl.textContent = store.getState().value; });
+    document.querySelectorAll("[data-act]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const act = btn.dataset.act;
+        const action = act === "incrementByAmount" ? { type: "counter/" + act, payload: 5 } : { type: "counter/" + act };
+        const prev = store.getState().value;
+        store.dispatch(action);
+        if (first) { logEl.innerHTML = ""; first = false; }
+        const line = document.createElement("div");
+        line.innerHTML = '<span class="a"></span> → <span class="s"></span>';
+        line.querySelector(".a").textContent = "dispatch(" + JSON.stringify(action) + ")";
+        line.querySelector(".s").textContent = "value: " + prev + " ⟶ " + store.getState().value;
+        logEl.prepend(line);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

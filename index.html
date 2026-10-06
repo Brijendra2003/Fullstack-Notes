@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fullstack Notes</title>
+  <meta name="description" content="Learn full-stack development with Next.js, PostgreSQL, TypeScript, React Context and Redux, from basic to advanced, with diagrams and examples.">
+  <script>try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('fsn-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <style>
+    .t-fe { --tc: #6366f1; --tc2: #06b6d4; }
+    .t-be { --tc: #059669; --tc2: #0ea5e9; }
+    .t-pg { --tc: #336791; --tc2: #22d3ee; }
+    .t-ts { --tc: #3178c6; --tc2: #60a5fa; }
+    .t-rx { --tc: #7c3aed; --tc2: #ec4899; }
+    .hero-home { padding: 4.5rem 0 4rem; }
+    .hero-home h1 { font-size: clamp(2.3rem, 5.5vw, 3.8rem); }
+    .grad-text { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .legend-item { display: flex; gap: .75rem; align-items: flex-start; }
+    .legend-item .callout { margin: 0; padding: .5rem .75rem; flex: 1; font-size: .88rem; }
+  </style>
+</head>
+<body class="page-home" data-page="home">
+<div id="site-nav"></div>
+
+<header class="hero hero-home">
+  <div class="container-xl">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-7">
+        <span class="chip mb-3"><i class="bi bi-mortarboard"></i> Basic → Intermediate → Advanced</span>
+        <h1 class="mb-3">Learn <span class="grad-text">Full-Stack</span> development with Next.js</h1>
+        <p class="lead mb-4">Visual, step-by-step notes for building real web apps: the frontend in Next.js, a backend API with PostgreSQL, type safety with TypeScript, and state management with React Context and Redux.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="frontend.html" class="btn btn-lg text-white px-4" style="background:linear-gradient(135deg,var(--accent),var(--accent-2));border:none"><i class="bi bi-play-fill"></i> Start learning</a>
+          <a href="#roadmap" class="btn btn-lg btn-outline-secondary px-4"><i class="bi bi-map"></i> View roadmap</a>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="diagram m-0">
+          <div class="diagram-title"><i class="bi bi-diagram-3"></i> What you'll build</div>
+          <div class="flow vertical">
+            <div class="node t-fe" style="width:100%;max-width:300px"><i class="bi bi-window-sidebar" style="color:#6366f1"></i>Next.js UI<small>React + Bootstrap + Context/Redux</small></div>
+            <div class="arrow both">fetch · Server Actions</div>
+            <div class="node" style="width:100%;max-width:300px"><i class="bi bi-hdd-stack" style="color:#059669"></i>Next.js Backend<small>Route Handlers · Auth · Validation</small></div>
+            <div class="arrow both">SQL</div>
+            <div class="node" style="width:100%;max-width:300px"><i class="bi bi-database" style="color:#336791"></i>PostgreSQL<small>Tables · Joins · Indexes</small></div>
+          </div>
+          <p class="diagram-caption"><i class="bi bi-braces-asterisk" style="color:#3178c6"></i> TypeScript runs through every layer</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="container-xl py-5">
+
+  <div class="text-center mb-4">
+    <h2 class="fw-bold">Choose a module</h2>
+    <p class="text-body-secondary">Each page has a sidebar table of contents, a progress tracker, diagrams, code you can copy, quizzes and a cheat sheet.</p>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+      <a href="frontend.html" class="topic-card t-fe">
+        <div class="t-icon"><i class="bi bi-window-sidebar"></i></div>
+        <h3>1. Frontend (Next.js)</h3>
+        <p>App Router, components, routing, layouts, Bootstrap styling, Server vs Client Components, data fetching, caching and streaming.</p>
+        <div class="tags mb-3"><span>JSX</span><span>Routing</span><span>Hooks</span><span>SSR/SSG/ISR</span><span>Suspense</span></div>
+        <div data-progress-for="frontend"><div class="progress mb-1"><div class="progress-bar" style="width:0%"></div></div><small class="p-text text-body-secondary">Not started</small></div>
+        <div class="go mt-2">Open notes <i class="bi bi-arrow-right"></i></div>
+      </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <a href="backend.html" class="topic-card t-be">
+        <div class="t-icon"><i class="bi bi-hdd-stack"></i></div>
+        <h3>2. Backend (Next.js + PostgreSQL)</h3>
+        <p>Route Handlers, Server Actions, connecting with pg, a CRUD API, Zod validation, JWT auth, proxy, transactions and security.</p>
+        <div class="tags mb-3"><span>REST</span><span>pg</span><span>Prisma</span><span>Auth</span><span>Transactions</span></div>
+        <div data-progress-for="backend"><div class="progress mb-1"><div class="progress-bar" style="width:0%"></div></div><small class="p-text text-body-secondary">Not started</small></div>
+        <div class="go mt-2">Open notes <i class="bi bi-arrow-right"></i></div>
+      </a>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <a href="postgresql.html" class="topic-card t-pg">
+        <div class="t-icon"><i class="bi bi-database"></i></div>
+        <h3>3. PostgreSQL</h3>
+        <p>Tables, data types, constraints, CRUD, joins with Venn diagrams, GROUP BY, CTEs, indexes, ACID transactions, window functions and JSONB.</p>
+        <div class="tags mb-3"><span>SQL</span><span>Joins</span><span>Indexes</span><span>EXPLAIN</span><span>JSONB</span></div>
+        <div data-progress-for="postgres"><div class="progress mb-1"><div class="progress-bar" style="width:0%"></div></div><small class="p-text text-body-secondary">Not started</small></div>
+        <div class="go mt-2">Open notes <i class="bi bi-arrow-right"></i></div>
+      </a>
+    </div>
+    <div class="col-md-6 col-lg-6">
+      <a href="typescript.html" class="topic-card t-ts">
+        <div class="t-icon"><i class="bi bi-braces-asterisk"></i></div>
+        <h3>4. TypeScript</h3>
+        <p>Types, interfaces, unions, narrowing, generics, utility types, mapped and conditional types, tsconfig, and typing React and Next.js code.</p>
+        <div class="tags mb-3"><span>Types</span><span>Generics</span><span>Utility types</span><span>infer</span><span>TSX</span></div>
+        <div data-progress-for="typescript"><div class="progress mb-1"><div class="progress-bar" style="width:0%"></div></div><small class="p-text text-body-secondary">Not started</small></div>
+        <div class="go mt-2">Open notes <i class="bi bi-arrow-right"></i></div>
+      </a>
+    </div>
+    <div class="col-md-12 col-lg-6">
+      <a href="react.html" class="topic-card t-rx">
+        <div class="t-icon"><i class="bi bi-diagram-3"></i></div>
+        <h3>5. React — Context API &amp; Redux</h3>
+        <p>Prop drilling, Context with typed hooks, useReducer, Redux Toolkit slices, async thunks, RTK Query and Next.js store setup. Includes a live Redux demo.</p>
+        <div class="tags mb-3"><span>Context</span><span>useReducer</span><span>createSlice</span><span>Thunks</span><span>RTK Query</span></div>
+        <div data-progress-for="react"><div class="progress mb-1"><div class="progress-bar" style="width:0%"></div></div><small class="p-text text-body-secondary">Not started</small></div>
+        <div class="go mt-2">Open notes <i class="bi bi-arrow-right"></i></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Roadmap -->
+  <section id="roadmap" class="mt-5 pt-4">
+    <div class="row g-5">
+      <div class="col-lg-6">
+        <h2 class="fw-bold mb-1"><i class="bi bi-map me-2" style="color:var(--accent)"></i>Suggested roadmap</h2>
+        <p class="text-body-secondary mb-4">Follow this order if you're starting from scratch. Already know some of it? Skip ahead.</p>
+        <div class="roadmap">
+          <div class="rm-step t-ts"><div class="rm-dot"><i class="bi bi-braces-asterisk"></i></div><div class="rm-body"><b>Step 1 · TypeScript basics</b><small>Types, interfaces, functions, unions. Enough to read Next.js code. (TS Level 1)</small></div></div>
+          <div class="rm-step t-fe"><div class="rm-dot"><i class="bi bi-window-sidebar"></i></div><div class="rm-body"><b>Step 2 · Next.js frontend</b><small>Components, routing, layouts, styling, then Server and Client Components. (Frontend Levels 1–2)</small></div></div>
+          <div class="rm-step t-pg"><div class="rm-dot"><i class="bi bi-database"></i></div><div class="rm-body"><b>Step 3 · PostgreSQL</b><small>Tables, CRUD, filtering, joins, aggregates. (PostgreSQL Levels 1–2)</small></div></div>
+          <div class="rm-step t-be"><div class="rm-dot"><i class="bi bi-hdd-stack"></i></div><div class="rm-body"><b>Step 4 · Backend</b><small>Connect Next.js to Postgres, build a CRUD API, validation, Server Actions. (Backend Levels 1–2)</small></div></div>
+          <div class="rm-step t-rx"><div class="rm-dot"><i class="bi bi-diagram-3"></i></div><div class="rm-body"><b>Step 5 · Shared state</b><small>Context API first, then Redux Toolkit for bigger apps.</small></div></div>
+          <div class="rm-step" style="--tc:#dc2626;--tc2:#f59e0b"><div class="rm-dot"><i class="bi bi-rocket-takeoff"></i></div><div class="rm-body"><b>Step 6 · Go advanced</b><small>Auth, transactions, caching, streaming, indexes, generics, RTK Query. Then build and deploy a full project!</small></div></div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <h2 class="fw-bold mb-1"><i class="bi bi-signpost me-2" style="color:var(--accent)"></i>How to read these notes</h2>
+        <p class="text-body-secondary mb-4">The same visual language is used on every page.</p>
+        <div class="d-flex flex-column gap-3">
+          <div class="legend-item"><span class="lvl basic">Basic</span><span class="lvl inter">Intermediate</span><span class="lvl adv">Advanced</span></div>
+          <div class="legend-item"><div class="callout analogy"><i class="bi bi-lightbulb"></i><div><strong class="t">Analogy</strong>A real-world comparison to build intuition.</div></div></div>
+          <div class="legend-item"><div class="callout tip"><i class="bi bi-lightbulb"></i><div><strong class="t">Tip</strong>Best practices and shortcuts.</div></div></div>
+          <div class="legend-item"><div class="callout info"><i class="bi bi-info-circle"></i><div><strong class="t">Info</strong>Extra context and version notes.</div></div></div>
+          <div class="legend-item"><div class="callout warn"><i class="bi bi-exclamation-triangle"></i><div><strong class="t">Warning</strong>Common gotchas.</div></div></div>
+          <div class="legend-item"><div class="callout danger"><i class="bi bi-x-octagon"></i><div><strong class="t">Danger</strong>Security issues and data-loss risks.</div></div></div>
+          <div class="n-card">
+            <h5><i class="bi bi-check2-circle me-1" style="color:var(--lvl-basic)"></i> Track your progress</h5>
+            <p>Click <b>"Mark done"</b> on any section. Progress is saved in your browser and shown on the cards above. Use <i class="bi bi-moon-stars"></i> in the navbar to switch to dark mode.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tech stack overview -->
+  <section class="mt-5 pt-4">
+    <h2 class="fw-bold text-center mb-4">The stack at a glance</h2>
+    <div class="table-responsive">
+      <table class="table table-notes mb-0">
+        <thead><tr><th>Layer</th><th>Technology</th><th>Its job</th><th>Notes page</th></tr></thead>
+        <tbody>
+          <tr><td><i class="bi bi-palette" style="color:#7952b3"></i> Styling</td><td>HTML, CSS, Bootstrap 5</td><td>Layout, components, responsive grid</td><td><a href="frontend.html#styling">Frontend → Styling</a></td></tr>
+          <tr><td><i class="bi bi-window-sidebar" style="color:#6366f1"></i> UI</td><td>React + Next.js App Router</td><td>Pages, components, routing, rendering</td><td><a href="frontend.html">Frontend</a></td></tr>
+          <tr><td><i class="bi bi-diagram-3" style="color:#7c3aed"></i> Client state</td><td>Context API / Redux Toolkit</td><td>Share state across components</td><td><a href="react.html">Context &amp; Redux</a></td></tr>
+          <tr><td><i class="bi bi-hdd-stack" style="color:#059669"></i> API</td><td>Route Handlers, Server Actions</td><td>Business logic, auth, validation</td><td><a href="backend.html">Backend</a></td></tr>
+          <tr><td><i class="bi bi-database" style="color:#336791"></i> Database</td><td>PostgreSQL (pg / Prisma)</td><td>Store data permanently and safely</td><td><a href="postgresql.html">PostgreSQL</a></td></tr>
+          <tr><td><i class="bi bi-braces-asterisk" style="color:#3178c6"></i> Language</td><td>TypeScript</td><td>Type safety across every layer</td><td><a href="typescript.html">TypeScript</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

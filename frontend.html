@@ -1,0 +1,1179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Next.js Frontend Notes</title>
+  <meta name="description" content="Next.js frontend notes from basic to advanced: App Router, components, routing, styling with Bootstrap, data fetching, rendering and performance.">
+  <script>try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('fsn-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body class="page-frontend" data-page="frontend">
+<div id="site-nav"></div>
+
+<header class="hero">
+  <div class="container-xl">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb small mb-3"><li class="breadcrumb-item"><a href="index.html">Home</a></li><li class="breadcrumb-item active">Frontend</li></ol></nav>
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <div class="hero-icon"><i class="bi bi-window-sidebar"></i></div>
+      <div><span class="chip"><i class="bi bi-1-circle"></i> Module 1</span></div>
+    </div>
+    <h1>Frontend with Next.js</h1>
+    <p class="lead">Learn how to build fast, modern user interfaces with Next.js and the App Router. We start with "what is a component?" and work up to streaming, caching and performance tuning.</p>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <span class="chip"><i class="bi bi-bar-chart-steps"></i> Basic → Advanced</span>
+      <span class="chip"><i class="bi bi-filetype-tsx"></i> TypeScript + JSX</span>
+      <span class="chip"><i class="bi bi-bootstrap"></i> Bootstrap styling</span>
+      <span class="chip"><i class="bi bi-diagram-3"></i> Diagrams on every topic</span>
+    </div>
+  </div>
+</header>
+
+<div class="container-xl">
+  <div class="row g-4">
+    <aside class="col-lg-3 d-none d-lg-block toc-col"><nav class="toc pt-4" data-toc></nav></aside>
+
+    <main class="col-lg-9 notes">
+
+      <!-- ===================== BASIC ===================== -->
+      <div class="level-banner basic"><i class="bi bi-1-circle-fill"></i><div>Level 1 — Basics<small>Setup, components, routing, layouts, navigation and styling</small></div></div>
+
+      <section class="note-section" id="what-is-nextjs" data-level="basic" data-title="What is Next.js?">
+        <h2><span class="sec-icon"><i class="bi bi-lightning-charge"></i></span>What is Next.js? <span class="lvl basic">Basic</span></h2>
+        <p><span class="kw">React</span> is a JavaScript library for building user interfaces out of small reusable pieces called <em>components</em>. On its own, React only handles the UI. It does not handle routing, servers, SEO or bundling.</p>
+        <p><span class="kw">Next.js</span> is a <strong>React framework</strong>. It adds everything a real website needs on top of React: file-based routing, server rendering, an API/backend layer, image and font optimization, and a build system.</p>
+
+        <div class="callout analogy"><i class="bi bi-lightbulb"></i><div><strong class="t">Think of it like this</strong>React is the <b>engine</b>. Next.js is the <b>whole car</b>: engine, wheels, steering, dashboard. You can build a car around the engine yourself, but Next.js gives you one that is ready to drive.</div></div>
+
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-diagram-2"></i> What Next.js adds on top of React</div>
+          <div class="stack">
+            <div class="layer" style="--lc:#6366f1"><i class="bi bi-signpost-split"></i><div><b>Routing</b><small>Folders become URLs automatically</small></div></div>
+            <div class="layer" style="--lc:#0ea5e9"><i class="bi bi-server"></i><div><b>Server rendering (SSR / SSG / ISR)</b><small>HTML is built on the server → fast first load and good SEO</small></div></div>
+            <div class="layer" style="--lc:#10b981"><i class="bi bi-hdd-network"></i><div><b>Backend (Route Handlers + Server Actions)</b><small>Write APIs in the same project</small></div></div>
+            <div class="layer" style="--lc:#f59e0b"><i class="bi bi-speedometer2"></i><div><b>Optimizations</b><small>Images, fonts, code-splitting, caching</small></div></div>
+            <div class="layer" style="--lc:#61dafb"><i class="bi bi-code-slash"></i><div><b>React (the UI library)</b><small>Components, JSX, hooks, state</small></div></div>
+          </div>
+        </div>
+
+        <h3><i class="bi bi-globe2"></i> How a page reaches the user</h3>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-arrow-left-right"></i> Request → response lifecycle</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-person-circle"></i>User<small>types example.com/blog</small></div>
+            <div class="arrow">HTTP request</div>
+            <div class="node hl"><i class="bi bi-server"></i>Next.js server<small>finds app/blog/page.tsx</small></div>
+            <div class="arrow">renders HTML</div>
+            <div class="node"><i class="bi bi-file-earmark-richtext"></i>HTML + JS<small>sent to browser</small></div>
+            <div class="arrow">hydration</div>
+            <div class="node ok"><i class="bi bi-hand-index-thumb"></i>Interactive page<small>buttons now work</small></div>
+          </div>
+          <p class="diagram-caption"><b>Hydration</b> means React "attaches" to the HTML the server sent, so it becomes interactive.</p>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-search"></i></div><h5>SEO friendly</h5><p>Search engines get real HTML instead of an empty <code>&lt;div&gt;</code>.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-rocket-takeoff"></i></div><h5>Fast</h5><p>Server rendering, code-splitting and caching are built in.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-layers"></i></div><h5>Full stack</h5><p>Frontend and backend live in one project, one language.</p></div></div>
+        </div>
+      </section>
+
+      <section class="note-section" id="setup" data-level="basic" data-title="Setup &amp; first project">
+        <h2><span class="sec-icon"><i class="bi bi-tools"></i></span>Setup &amp; your first project <span class="lvl basic">Basic</span></h2>
+        <h3><i class="bi bi-check2-square"></i> Prerequisites</h3>
+        <ol class="steps">
+          <li><b>Install Node.js (LTS)</b>Download it from nodejs.org. Check the install with <code>node -v</code> and <code>npm -v</code>.</li>
+          <li><b>Install a code editor</b>VS Code is recommended. Add the ES7+ React snippets and Prettier extensions.</li>
+          <li><b>Know basic HTML, CSS and JavaScript</b>Mainly variables, functions, arrays, objects, <code>map()</code>, arrow functions, <code>async/await</code> and modules.</li>
+        </ol>
+
+        <h3><i class="bi bi-terminal"></i> Create the app</h3>
+        <script type="text/plain" class="code" data-lang="bash" data-title="terminal">
+          npx create-next-app@latest my-app
+          # Answer the prompts: TypeScript → Yes, ESLint → Yes,
+          # Tailwind → No (we'll use Bootstrap), src/ directory → optional,
+          # App Router → Yes, import alias "@/*" → Yes
+
+          cd my-app
+          npm run dev        # start dev server → http://localhost:3000
+        </script>
+
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Command</th><th>What it does</th><th>When to use</th></tr></thead>
+            <tbody>
+              <tr><td><code>npm run dev</code></td><td>Development server with hot reload</td><td>While coding</td></tr>
+              <tr><td><code>npm run build</code></td><td>Builds an optimized production version</td><td>Before deploying</td></tr>
+              <tr><td><code>npm run start</code></td><td>Runs the production build</td><td>On the server</td></tr>
+              <tr><td><code>npm run lint</code></td><td>Checks code for problems</td><td>Before committing</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout tip"><i class="bi bi-lightbulb"></i><div><strong class="t">Tip</strong>Recent versions of Next.js use <b>Turbopack</b>, a very fast bundler written in Rust, so dev server start-up and reloads are near-instant.</div></div>
+      </section>
+
+      <section class="note-section" id="structure" data-level="basic" data-title="Project structure">
+        <h2><span class="sec-icon"><i class="bi bi-folder2-open"></i></span>Project structure <span class="lvl basic">Basic</span></h2>
+        <p>In the <b>App Router</b>, the <code>app/</code> folder is the heart of your project. Every folder inside it can become a URL segment.</p>
+        <div class="diagram tree-wrap">
+          <div class="diagram-title"><i class="bi bi-folder"></i> A typical Next.js project</div>
+          <ul class="tree">
+            <li><i class="bi bi-folder2-open"></i> my-app/
+              <ul>
+                <li><i class="bi bi-folder2-open"></i> app/ <span class="cm">← routes live here</span>
+                  <ul>
+                    <li><i class="bi bi-filetype-tsx"></i> layout.tsx <span class="cm">← root layout (html, body), wraps every page</span></li>
+                    <li><i class="bi bi-filetype-tsx"></i> page.tsx <span class="cm">← the "/" home page</span></li>
+                    <li><i class="bi bi-filetype-css"></i> globals.css <span class="cm">← global styles</span></li>
+                    <li><i class="bi bi-folder2-open"></i> about/
+                      <ul><li><i class="bi bi-filetype-tsx"></i> page.tsx <span class="cm">← "/about"</span></li></ul>
+                    </li>
+                    <li><i class="bi bi-folder2-open"></i> api/
+                      <ul><li><i class="bi bi-filetype-ts"></i> route.ts <span class="cm">← backend endpoint (see Backend notes)</span></li></ul>
+                    </li>
+                  </ul>
+                </li>
+                <li><i class="bi bi-folder2"></i> components/ <span class="cm">← reusable UI pieces (Navbar, Card…)</span></li>
+                <li><i class="bi bi-folder2"></i> lib/ <span class="cm">← helpers, db client, utils</span></li>
+                <li><i class="bi bi-folder2"></i> public/ <span class="cm">← static files served at "/" (images, favicon)</span></li>
+                <li><i class="bi bi-gear"></i> next.config.ts <span class="cm">← Next.js configuration</span></li>
+                <li><i class="bi bi-filetype-json"></i> package.json <span class="cm">← dependencies + scripts</span></li>
+                <li><i class="bi bi-filetype-json"></i> tsconfig.json <span class="cm">← TypeScript settings</span></li>
+                <li><i class="bi bi-file-earmark-lock"></i> .env.local <span class="cm">← secrets (never commit!)</span></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        <div class="callout info"><i class="bi bi-info-circle"></i><div><strong class="t">Only special file names become routes</strong>A folder becomes publicly reachable only when it contains a <code>page.tsx</code> (UI) or <code>route.ts</code> (API). That means you can safely put components inside <code>app/</code> too.</div></div>
+      </section>
+
+      <section class="note-section" id="components" data-level="basic" data-title="JSX, components &amp; props">
+        <h2><span class="sec-icon"><i class="bi bi-puzzle"></i></span>JSX, components &amp; props <span class="lvl basic">Basic</span></h2>
+        <p>A <span class="kw">component</span> is a function that returns UI. That UI is written in <span class="kw">JSX</span>, a syntax that looks like HTML but lives inside JavaScript.</p>
+
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-diagram-3"></i> A page is a tree of components</div>
+          <svg class="dg" viewBox="0 0 640 230" role="img" aria-label="Component tree: Page contains Navbar, ProductList and Footer; ProductList contains three ProductCards">
+            <defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="arrowhead"/></marker></defs>
+            <rect x="260" y="10" width="120" height="44" rx="10" class="box-hl"/><text x="320" y="38" text-anchor="middle" class="txt">Page</text>
+            <path d="M300 54 L120 92" class="line" marker-end="url(#ah1)"/><path d="M320 54 L320 92" class="line" marker-end="url(#ah1)"/><path d="M340 54 L520 92" class="line" marker-end="url(#ah1)"/>
+            <rect x="60" y="94" width="120" height="44" rx="10" class="box"/><text x="120" y="121" text-anchor="middle" class="txt">Navbar</text>
+            <rect x="250" y="94" width="140" height="44" rx="10" class="box"/><text x="320" y="121" text-anchor="middle" class="txt">ProductList</text>
+            <rect x="460" y="94" width="120" height="44" rx="10" class="box"/><text x="520" y="121" text-anchor="middle" class="txt">Footer</text>
+            <path d="M300 138 L200 172" class="line-muted"/><path d="M320 138 L320 172" class="line-muted"/><path d="M340 138 L440 172" class="line-muted"/>
+            <rect x="140" y="174" width="120" height="40" rx="10" class="box"/><text x="200" y="199" text-anchor="middle" class="txt-sm">ProductCard</text>
+            <rect x="260" y="174" width="120" height="40" rx="10" class="box"/><text x="320" y="199" text-anchor="middle" class="txt-sm">ProductCard</text>
+            <rect x="380" y="174" width="120" height="40" rx="10" class="box"/><text x="440" y="199" text-anchor="middle" class="txt-sm">ProductCard</text>
+          </svg>
+          <p class="diagram-caption">Data flows <b>down</b> the tree through <b>props</b>.</p>
+        </div>
+
+        <script type="text/plain" class="code" data-lang="tsx" data-title="components/ProductCard.tsx">
+          // 1. Describe the props with a TypeScript type
+          type ProductCardProps = {
+            title: string;
+            price: number;
+            inStock?: boolean; // "?" = optional
+          };
+
+          // 2. A component is just a function that returns JSX
+          export default function ProductCard({ title, price, inStock = true }: ProductCardProps) {
+            return (
+              <div className="card shadow-sm">
+                <div className="card-body">
+                  <h5 className="card-title">{title}</h5>      {/* {} = JavaScript inside JSX */}
+                  <p className="card-text">₹{price.toFixed(2)}</p>
+                  {inStock ? (
+                    <span className="badge text-bg-success">In stock</span>
+                  ) : (
+                    <span className="badge text-bg-secondary">Sold out</span>
+                  )}
+                </div>
+              </div>
+            );
+          }
+        </script>
+
+        <script type="text/plain" class="code" data-lang="tsx" data-title="app/page.tsx">
+          import ProductCard from "@/components/ProductCard";
+
+          const products = [
+            { id: 1, title: "Keyboard", price: 1999 },
+            { id: 2, title: "Mouse", price: 799, inStock: false },
+          ];
+
+          export default function HomePage() {
+            return (
+              <main className="container py-5">
+                <h1 className="mb-4">Products</h1>
+                <div className="row g-3">
+                  {products.map((p) => (
+                    <div className="col-md-4" key={p.id}>   {/* key helps React track list items */}
+                      <ProductCard title={p.title} price={p.price} inStock={p.inStock} />
+                    </div>
+                  ))}
+                </div>
+              </main>
+            );
+          }
+        </script>
+
+        <h3><i class="bi bi-exclamation-diamond"></i> JSX rules to remember</h3>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>HTML</th><th>JSX</th><th>Why</th></tr></thead>
+            <tbody>
+              <tr><td><code>class="btn"</code></td><td><code>className="btn"</code></td><td><code>class</code> is a reserved word in JS</td></tr>
+              <tr><td><code>for="email"</code></td><td><code>htmlFor="email"</code></td><td><code>for</code> is reserved too</td></tr>
+              <tr><td><code>onclick="..."</code></td><td><code>onClick={fn}</code></td><td>Events use camelCase and take a function</td></tr>
+              <tr><td><code>style="color:red"</code></td><td><code>style={{ color: "red" }}</code></td><td>Style is an object</td></tr>
+              <tr><td><code>&lt;img&gt;</code></td><td><code>&lt;img /&gt;</code></td><td>Every tag must be closed</td></tr>
+              <tr><td>Many root elements</td><td>One root or <code>&lt;&gt;...&lt;/&gt;</code></td><td>A component returns a single element (a Fragment is fine)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="note-section" id="routing" data-level="basic" data-title="File-based routing">
+        <h2><span class="sec-icon"><i class="bi bi-signpost-split"></i></span>File-based routing <span class="lvl basic">Basic</span></h2>
+        <p>In Next.js you don't write a router config. <b>The folder structure is the router.</b> Each folder is a URL segment, and a <code>page.tsx</code> file makes that segment visible.</p>
+
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-arrow-right-square"></i> Folder → URL mapping</div>
+          <div class="row g-2 align-items-center">
+            <div class="col-12">
+              <div class="flow keep-row" style="justify-content:flex-start"><div class="node" style="min-width:230px"><i class="bi bi-filetype-tsx"></i>app/page.tsx</div><div class="arrow">becomes</div><div class="node hl" style="min-width:200px"><i class="bi bi-link-45deg"></i>/</div></div>
+            </div>
+            <div class="col-12">
+              <div class="flow keep-row" style="justify-content:flex-start"><div class="node" style="min-width:230px"><i class="bi bi-filetype-tsx"></i>app/about/page.tsx</div><div class="arrow">becomes</div><div class="node hl" style="min-width:200px"><i class="bi bi-link-45deg"></i>/about</div></div>
+            </div>
+            <div class="col-12">
+              <div class="flow keep-row" style="justify-content:flex-start"><div class="node" style="min-width:230px"><i class="bi bi-filetype-tsx"></i>app/blog/[slug]/page.tsx</div><div class="arrow">becomes</div><div class="node hl" style="min-width:200px"><i class="bi bi-link-45deg"></i>/blog/hello-world</div></div>
+            </div>
+            <div class="col-12">
+              <div class="flow keep-row" style="justify-content:flex-start"><div class="node" style="min-width:230px"><i class="bi bi-filetype-tsx"></i>app/dashboard/settings/page.tsx</div><div class="arrow">becomes</div><div class="node hl" style="min-width:200px"><i class="bi bi-link-45deg"></i>/dashboard/settings</div></div>
+            </div>
+          </div>
+        </div>
+
+        <h3><i class="bi bi-file-earmark-code"></i> Special files in a route folder</h3>
+        <div class="row g-3">
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-file-earmark-richtext"></i></div><h5>page.tsx</h5><p>The UI for that URL. Makes the route public.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-layout-text-window"></i></div><h5>layout.tsx</h5><p>A shared wrapper (navbar, sidebar). It stays mounted when you navigate between pages.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-hourglass-split"></i></div><h5>loading.tsx</h5><p>Shown instantly while the page loads its data.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-bug"></i></div><h5>error.tsx</h5><p>Catches errors in that segment and shows a fallback UI.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-question-octagon"></i></div><h5>not-found.tsx</h5><p>A custom 404 page.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-plug"></i></div><h5>route.ts</h5><p>An API endpoint (GET, POST…). Covered on the Backend page.</p></div></div>
+        </div>
+        <div class="quiz" data-answer="c" data-explain="A folder needs a page.tsx inside it to become a visible route.">
+          <p class="q">You created <code>app/contact/ContactForm.tsx</code>. Is <code>/contact</code> now a page?</p>
+          <button data-opt="a">Yes, any .tsx file inside a folder becomes a route</button>
+          <button data-opt="b">Yes, but only if the file is named ContactForm</button>
+          <button data-opt="c">No, you need app/contact/page.tsx</button>
+        </div>
+      </section>
+
+      <section class="note-section" id="layouts" data-level="basic" data-title="Layouts">
+        <h2><span class="sec-icon"><i class="bi bi-layout-wtf"></i></span>Layouts <span class="lvl basic">Basic</span></h2>
+        <p>A <span class="kw">layout</span> wraps pages and <b>keeps its state</b> when you navigate. Layouts nest: the root layout wraps the dashboard layout, which wraps the dashboard pages.</p>
+
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-bounding-box"></i> Nested layouts for /dashboard/settings</div>
+          <div style="max-width:560px;margin:auto">
+            <div class="p-3 rounded-3" style="border:2px solid var(--accent);background:var(--soft)">
+              <div class="small fw-bold mb-2"><i class="bi bi-layout-text-window me-1"></i>app/layout.tsx <span class="text-body-secondary fw-normal">— &lt;html&gt;, &lt;body&gt;, Navbar, Footer</span></div>
+              <div class="p-3 rounded-3" style="border:2px dashed var(--accent-2);background:var(--bs-body-bg)">
+                <div class="small fw-bold mb-2"><i class="bi bi-layout-sidebar me-1"></i>app/dashboard/layout.tsx <span class="text-body-secondary fw-normal">— Sidebar</span></div>
+                <div class="p-3 rounded-3 text-center" style="border:1.5px solid var(--bs-border-color);background:var(--bs-tertiary-bg)">
+                  <i class="bi bi-file-earmark-richtext" style="color:var(--accent)"></i> <b>app/dashboard/settings/page.tsx</b>
+                  <div class="small text-body-secondary">the only part that changes</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <script type="text/plain" class="code" data-lang="tsx" data-title="app/layout.tsx  (root layout — required)">
+          import type { Metadata } from "next";
+          import "bootstrap/dist/css/bootstrap.min.css";
+          import "./globals.css";
+          import Navbar from "@/components/Navbar";
+
+          export const metadata: Metadata = {
+            title: "My Shop",
+            description: "Built with Next.js",
+          };
+
+          export default function RootLayout({ children }: { children: React.ReactNode }) {
+            return (
+              <html lang="en">
+                <body>
+                  <Navbar />
+                  {children}            {/* ← the current page is rendered here */}
+                  <footer className="text-center py-4">© 2026</footer>
+                </body>
+              </html>
+            );
+          }
+        </script>
+
+        <script type="text/plain" class="code" data-lang="tsx" data-title="app/dashboard/layout.tsx">
+          export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+            return (
+              <div className="container-fluid">
+                <div className="row">
+                  <aside className="col-md-3 col-lg-2 border-end min-vh-100 p-3">Sidebar</aside>
+                  <section className="col-md-9 col-lg-10 p-4">{children}</section>
+                </div>
+              </div>
+            );
+          }
+        </script>
+        <div class="callout info"><i class="bi bi-arrow-repeat"></i><div><strong class="t">layout vs template</strong><code>layout.tsx</code> is kept alive between navigations, so its state survives. <code>template.tsx</code> has the same shape but is re-created on every navigation. Use it when you want an animation or effect to run again on each page.</div></div>
+      </section>
+
+      <section class="note-section" id="navigation" data-level="basic" data-title="Linking &amp; navigation">
+        <h2><span class="sec-icon"><i class="bi bi-compass"></i></span>Linking &amp; navigation <span class="lvl basic">Basic</span></h2>
+        <div class="vs">
+          <div class="side"><h5><i class="bi bi-x-circle no"></i> &lt;a href&gt;</h5><ul><li>Full page reload</li><li>Layout state is lost</li><li>Slower</li></ul></div>
+          <div class="mid">VS</div>
+          <div class="side" style="border-color:var(--accent)"><h5><i class="bi bi-check-circle yes"></i> &lt;Link href&gt;</h5><ul><li>Client-side navigation (no reload)</li><li>Prefetches the page when the link is visible</li><li>Layouts stay mounted</li></ul></div>
+        </div>
+
+        <script type="text/plain" class="code" data-lang="tsx" data-title="components/Navbar.tsx">
+          "use client"; // needed because we use a hook (usePathname)
+
+          import Link from "next/link";
+          import { usePathname } from "next/navigation";
+
+          const links = [
+            { href: "/", label: "Home" },
+            { href: "/products", label: "Products" },
+            { href: "/about", label: "About" },
+          ];
+
+          export default function Navbar() {
+            const pathname = usePathname(); // e.g. "/products"
+            return (
+              <nav className="navbar navbar-expand bg-body-tertiary px-3">
+                <Link href="/" className="navbar-brand">MyShop</Link>
+                <ul className="navbar-nav">
+                  {links.map((l) => (
+                    <li className="nav-item" key={l.href}>
+                      <Link href={l.href} className={`nav-link ${pathname === l.href ? "active" : ""}`}>
+                        {l.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            );
+          }
+        </script>
+
+        <h3><i class="bi bi-cursor"></i> Navigating with code</h3>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="Client side: useRouter  |  Server side: redirect">
+          // In a CLIENT component (e.g. after a button click)
+          "use client";
+          import { useRouter } from "next/navigation"; // ⚠️ not "next/router" (that's the old Pages Router)
+
+          export function LogoutButton() {
+            const router = useRouter();
+            return <button className="btn btn-outline-danger" onClick={() => router.push("/login")}>Logout</button>;
+          }
+
+          // In a SERVER component / server action
+          import { redirect } from "next/navigation";
+          if (!user) redirect("/login");
+        </script>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Hook / function</th><th>Use it to…</th><th>Where</th></tr></thead>
+            <tbody>
+              <tr><td><code>&lt;Link&gt;</code></td><td>Make normal links</td><td>Server &amp; client</td></tr>
+              <tr><td><code>useRouter()</code></td><td><code>push</code>, <code>replace</code>, <code>back</code>, <code>refresh</code></td><td>Client</td></tr>
+              <tr><td><code>usePathname()</code></td><td>Read the current path</td><td>Client</td></tr>
+              <tr><td><code>useSearchParams()</code></td><td>Read <code>?q=shoes&amp;page=2</code></td><td>Client</td></tr>
+              <tr><td><code>redirect()</code></td><td>Send the user to another page</td><td>Server</td></tr>
+              <tr><td><code>notFound()</code></td><td>Show the 404 page</td><td>Server</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="note-section" id="styling" data-level="basic" data-title="Styling (CSS &amp; Bootstrap)">
+        <h2><span class="sec-icon"><i class="bi bi-palette"></i></span>Styling: CSS, CSS Modules &amp; Bootstrap <span class="lvl basic">Basic</span></h2>
+        <div class="row g-3">
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-globe"></i></div><h5>Global CSS</h5><p><code>globals.css</code> is imported once in the root layout and applies everywhere.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-box"></i></div><h5>CSS Modules</h5><p><code>Button.module.css</code>: class names are scoped to one component, so they never clash.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-bootstrap"></i></div><h5>Bootstrap</h5><p>Ready-made grid and components. Install it with npm and import the CSS in the layout.</p></div></div>
+        </div>
+
+        <h3><i class="bi bi-bootstrap"></i> Adding Bootstrap to Next.js</h3>
+        <ol class="steps">
+          <li><b>Install</b><code>npm install bootstrap bootstrap-icons</code></li>
+          <li><b>Import the CSS in the root layout</b><code>import "bootstrap/dist/css/bootstrap.min.css";</code></li>
+          <li><b>Load Bootstrap's JS on the client only</b>Dropdowns, modals and other interactive components need JS. Bootstrap's JS uses <code>document</code>, so it must load in the browser.</li>
+        </ol>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="components/BootstrapClient.tsx">
+          "use client";
+          import { useEffect } from "react";
+
+          export default function BootstrapClient() {
+            useEffect(() => {
+              // dynamic import runs only in the browser
+              import("bootstrap/dist/js/bootstrap.bundle.min.js");
+            }, []);
+            return null;
+          }
+
+          // then in app/layout.tsx → <body> ... <BootstrapClient /> </body>
+        </script>
+
+        <h3><i class="bi bi-box"></i> CSS Modules example</h3>
+        <div class="code-pair">
+          <div>
+            <script type="text/plain" class="code" data-lang="css" data-title="components/Hero.module.css">
+              .hero {
+                padding: 4rem 1rem;
+                background: linear-gradient(135deg, #6366f1, #06b6d4);
+                color: white;
+              }
+              .title { font-size: 3rem; font-weight: 800; }
+            </script>
+          </div>
+          <div>
+            <script type="text/plain" class="code" data-lang="tsx" data-title="components/Hero.tsx">
+              import styles from "./Hero.module.css";
+
+              export default function Hero() {
+                return (
+                  <section className={`${styles.hero} text-center`}>
+                    <h1 className={styles.title}>Welcome</h1>
+                  </section>
+                );
+              }
+            </script>
+          </div>
+        </div>
+        <div class="callout tip"><i class="bi bi-lightbulb"></i><div><strong class="t">Mixing is fine</strong>Use Bootstrap utility classes (<code>py-5</code>, <code>d-flex</code>, <code>row</code>) for layout, and CSS Modules for anything custom.</div></div>
+      </section>
+
+      <section class="note-section" id="assets" data-level="basic" data-title="Images, fonts &amp; metadata">
+        <h2><span class="sec-icon"><i class="bi bi-image"></i></span>Images, fonts &amp; metadata <span class="lvl basic">Basic</span></h2>
+        <h3><i class="bi bi-image"></i> next/image</h3>
+        <p>The <code>&lt;Image&gt;</code> component resizes images, lazy-loads them, serves modern formats like WebP/AVIF, and reserves space so the layout doesn't jump.</p>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="app/page.tsx">
+          import Image from "next/image";
+          import heroPic from "@/public/hero.jpg"; // static import → width/height known automatically
+
+          export default function Page() {
+            return (
+              <>
+                <Image src={heroPic} alt="Hero" priority className="img-fluid rounded" />
+                {/* remote image: width & height are required + domain must be allowed in next.config */}
+                <Image src="https://images.example.com/shoe.png" alt="Shoe" width={400} height={300} />
+              </>
+            );
+          }
+        </script>
+
+        <h3><i class="bi bi-fonts"></i> next/font</h3>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="app/layout.tsx">
+          import { Inter } from "next/font/google";
+          const inter = Inter({ subsets: ["latin"] }); // downloaded at build time → no layout shift, no Google request at runtime
+
+          export default function RootLayout({ children }: { children: React.ReactNode }) {
+            return (
+              <html lang="en" className={inter.className}>
+                <body>{children}</body>
+              </html>
+            );
+          }
+        </script>
+
+        <h3><i class="bi bi-tags"></i> Metadata (SEO)</h3>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="app/about/page.tsx">
+          import type { Metadata } from "next";
+
+          export const metadata: Metadata = {
+            title: "About us | MyShop",
+            description: "Learn about our team",
+            openGraph: { images: ["/og-about.png"] },
+          };
+
+          export default function About() { return <h1>About</h1>; }
+        </script>
+      </section>
+
+      <!-- ===================== INTERMEDIATE ===================== -->
+      <div class="level-banner inter"><i class="bi bi-2-circle-fill"></i><div>Level 2 — Intermediate<small>Server vs Client components, hooks, dynamic routes, data fetching and forms</small></div></div>
+
+      <section class="note-section" id="server-client" data-level="inter" data-title="Server vs Client Components">
+        <h2><span class="sec-icon"><i class="bi bi-hdd-rack"></i></span>Server vs Client Components <span class="lvl inter">Intermediate</span></h2>
+        <p>This is the <b>most important concept</b> in the App Router. Every component is a <span class="kw">Server Component</span> by default. You opt in to a <span class="kw">Client Component</span> by adding <code>"use client"</code> at the very top of the file.</p>
+
+        <div class="vs">
+          <div class="side" style="border-color:var(--accent)">
+            <h5><i class="bi bi-server" style="color:var(--accent)"></i> Server Component (default)</h5>
+            <ul>
+              <li>Runs <b>only on the server</b></li>
+              <li>Can be <code>async</code> and <code>await</code> data directly</li>
+              <li>Can read the database and secrets safely</li>
+              <li><b>Zero JS</b> is sent to the browser for it</li>
+              <li><span class="no">✗</span> No <code>useState</code>, <code>useEffect</code> or <code>onClick</code></li>
+            </ul>
+          </div>
+          <div class="mid">VS</div>
+          <div class="side" style="border-color:var(--accent-2)">
+            <h5><i class="bi bi-laptop" style="color:var(--accent-2)"></i> Client Component</h5>
+            <ul>
+              <li>Starts with <code>"use client"</code></li>
+              <li>Pre-rendered on the server, then <b>hydrated</b> in the browser</li>
+              <li>Can use state, effects and event handlers</li>
+              <li>Can use browser APIs (<code>window</code>, <code>localStorage</code>)</li>
+              <li><span class="no">✗</span> Never put secrets or DB calls here</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-diagram-3"></i> Keep "use client" at the leaves of the tree</div>
+          <svg class="dg" viewBox="0 0 640 210" role="img" aria-label="Server page contains server header and server product list; only the AddToCart button and SearchBox are client components">
+            <rect x="250" y="10" width="140" height="44" rx="10" class="box-hl"/><text x="320" y="37" text-anchor="middle" class="txt">page.tsx (S)</text>
+            <path d="M290 54 L130 90" class="line"/><path d="M350 54 L490 90" class="line"/>
+            <rect x="60" y="90" width="140" height="44" rx="10" class="box-hl"/><text x="130" y="117" text-anchor="middle" class="txt">Header (S)</text>
+            <rect x="410" y="90" width="160" height="44" rx="10" class="box-hl"/><text x="490" y="117" text-anchor="middle" class="txt">ProductList (S)</text>
+            <path d="M130 134 L130 160" class="line-muted"/><path d="M490 134 L490 160" class="line-muted"/>
+            <rect x="50" y="160" width="160" height="40" rx="20" class="box" style="stroke:#f59e0b;stroke-width:2"/><text x="130" y="185" text-anchor="middle" class="txt-sm">SearchBox (C)</text>
+            <rect x="400" y="160" width="180" height="40" rx="20" class="box" style="stroke:#f59e0b;stroke-width:2"/><text x="490" y="185" text-anchor="middle" class="txt-sm">AddToCartButton (C)</text>
+            <text x="320" y="130" text-anchor="middle" class="txt-sm">S = Server · C = Client ("use client")</text>
+          </svg>
+          <p class="diagram-caption">Only the interactive pieces ship JavaScript. Everything else stays on the server.</p>
+        </div>
+
+        <div class="code-pair">
+          <div>
+            <script type="text/plain" class="code" data-lang="tsx" data-title="app/products/page.tsx  (Server)">
+              import AddToCartButton from "./AddToCartButton";
+              import { db } from "@/lib/db";
+
+              export default async function ProductsPage() {
+                // ✅ direct DB access — runs on server only
+                const { rows: products } = await db.query("SELECT id, name FROM products");
+                return (
+                  <ul className="list-group">
+                    {products.map((p) => (
+                      <li key={p.id} className="list-group-item d-flex justify-content-between">
+                        {p.name}
+                        <AddToCartButton id={p.id} />
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
+            </script>
+          </div>
+          <div>
+            <script type="text/plain" class="code" data-lang="tsx" data-title="app/products/AddToCartButton.tsx  (Client)">
+              "use client";
+              import { useState } from "react";
+
+              export default function AddToCartButton({ id }: { id: number }) {
+                const [added, setAdded] = useState(false);
+                return (
+                  <button
+                    className={`btn btn-sm ${added ? "btn-success" : "btn-primary"}`}
+                    onClick={() => setAdded(true)}
+                  >
+                    {added ? "Added ✓" : "Add to cart"}
+                  </button>
+                );
+              }
+            </script>
+          </div>
+        </div>
+        <div class="callout warn"><i class="bi bi-exclamation-triangle"></i><div><strong class="t">Rules of composition</strong>
+          <ul class="mb-0">
+            <li>A Client Component <b>cannot import</b> a Server Component. It can receive one as <code>children</code> or another prop.</li>
+            <li>Props passed from server to client must be <b>serializable</b>: strings, numbers, plain objects and arrays. Functions are not allowed, except Server Actions.</li>
+            <li><code>"use client"</code> marks a <b>boundary</b>. Everything that file imports also becomes client code.</li>
+          </ul></div></div>
+        <div class="quiz" data-answer="b" data-explain="onClick needs JavaScript in the browser, so the component must be a Client Component.">
+          <p class="q">A component uses <code>onClick</code>. What must you add?</p>
+          <button data-opt="a">"use server" at the top</button>
+          <button data-opt="b">"use client" at the top</button>
+          <button data-opt="c">Make the function async</button>
+        </div>
+      </section>
+
+      <section class="note-section" id="hooks" data-level="inter" data-title="React hooks essentials">
+        <h2><span class="sec-icon"><i class="bi bi-link"></i></span>React hooks essentials <span class="lvl inter">Intermediate</span></h2>
+        <p><span class="kw">Hooks</span> are functions that start with <code>use</code> and let Client Components have state and side effects. Call them at the <b>top level</b> of a component, never inside if-statements or loops.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-arrow-repeat"></i> The state → render loop</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-hand-index"></i>User clicks</div>
+            <div class="arrow">event</div>
+            <div class="node hl"><i class="bi bi-pencil"></i>setCount(c+1)<small>state updates</small></div>
+            <div class="arrow">triggers</div>
+            <div class="node"><i class="bi bi-arrow-clockwise"></i>Re-render<small>component runs again</small></div>
+            <div class="arrow">React diffs</div>
+            <div class="node ok"><i class="bi bi-display"></i>DOM updated<small>only what changed</small></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="components/HooksDemo.tsx">
+          "use client";
+          import { useState, useEffect, useRef, useMemo } from "react";
+
+          export default function HooksDemo({ items }: { items: string[] }) {
+            // useState → value that, when changed, re-renders the UI
+            const [query, setQuery] = useState("");
+
+            // useRef → keeps a value / DOM node WITHOUT causing re-render
+            const inputRef = useRef<HTMLInputElement>(null);
+
+            // useEffect → run side effects AFTER render (timers, subscriptions, DOM)
+            useEffect(() => {
+              inputRef.current?.focus();
+              const t = setTimeout(() => console.log("searching", query), 300);
+              return () => clearTimeout(t);          // cleanup runs before next effect / unmount
+            }, [query]);                             // dependency array: re-run when query changes
+
+            // useMemo → cache an expensive calculation
+            const filtered = useMemo(
+              () => items.filter((i) => i.toLowerCase().includes(query.toLowerCase())),
+              [items, query]
+            );
+
+            return (
+              <div>
+                <input ref={inputRef} className="form-control mb-2" value={query}
+                       onChange={(e) => setQuery(e.target.value)} placeholder="Search…" />
+                <ul>{filtered.map((i) => <li key={i}>{i}</li>)}</ul>
+              </div>
+            );
+          }
+        </script>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Hook</th><th>Purpose</th><th>Analogy</th></tr></thead>
+            <tbody>
+              <tr><td><code>useState</code></td><td>Remember a value and re-render when it changes</td><td>A whiteboard that redraws the room when edited</td></tr>
+              <tr><td><code>useEffect</code></td><td>Sync with outside systems after render</td><td>"After you finish painting, turn on the lights"</td></tr>
+              <tr><td><code>useRef</code></td><td>Mutable box; access DOM nodes</td><td>A sticky note that doesn't trigger a redraw</td></tr>
+              <tr><td><code>useMemo</code> / <code>useCallback</code></td><td>Cache a value / a function between renders</td><td>Remembering a calculation's answer</td></tr>
+              <tr><td><code>useContext</code></td><td>Read shared data without prop drilling</td><td>See the <a href="react.html">React Context page</a></td></tr>
+              <tr><td><code>useReducer</code></td><td>Complex state with actions</td><td>A mini Redux (see the React page)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout danger"><i class="bi bi-x-octagon"></i><div><strong class="t">Common mistake</strong>Leaving the dependency array out of <code>useEffect</code> makes the effect run after <b>every</b> render. If the effect also sets state, you get an infinite loop.</div></div>
+      </section>
+
+      <section class="note-section" id="dynamic-routes" data-level="inter" data-title="Dynamic routes &amp; params">
+        <h2><span class="sec-icon"><i class="bi bi-braces"></i></span>Dynamic routes &amp; params <span class="lvl inter">Intermediate</span></h2>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Folder</th><th>Matches</th><th><code>params</code></th></tr></thead>
+            <tbody>
+              <tr><td><code>app/blog/[slug]</code></td><td>/blog/hello</td><td><code>{ slug: "hello" }</code></td></tr>
+              <tr><td><code>app/shop/[...parts]</code></td><td>/shop/men/shoes/nike</td><td><code>{ parts: ["men","shoes","nike"] }</code></td></tr>
+              <tr><td><code>app/docs/[[...parts]]</code></td><td>/docs <b>and</b> /docs/a/b</td><td><code>{ parts: undefined | [...] }</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="app/blog/[slug]/page.tsx">
+          import { notFound } from "next/navigation";
+
+          type Props = {
+            params: Promise<{ slug: string }>;                       // ⚠️ params is a Promise (Next.js 15+)
+            searchParams: Promise<{ [key: string]: string | undefined }>;
+          };
+
+          // Pre-build these pages at build time (SSG)
+          export async function generateStaticParams() {
+            const posts = await fetch("https://api.example.com/posts").then((r) => r.json());
+            return posts.map((p: { slug: string }) => ({ slug: p.slug }));
+          }
+
+          // Dynamic SEO title per post
+          export async function generateMetadata({ params }: Props) {
+            const { slug } = await params;
+            return { title: `Blog: ${slug}` };
+          }
+
+          export default async function BlogPost({ params, searchParams }: Props) {
+            const { slug } = await params;
+            const { ref } = await searchParams;          // /blog/hello?ref=twitter
+            const post = await getPost(slug);
+            if (!post) notFound();                       // → renders not-found.tsx
+
+            return (
+              <article className="container py-5">
+                <h1>{post.title}</h1>
+                <p className="text-muted">Came from: {ref ?? "direct"}</p>
+                <div>{post.body}</div>
+              </article>
+            );
+          }
+        </script>
+        <div class="callout info"><i class="bi bi-info-circle"></i><div><strong class="t">In Client Components</strong>Use <code>useParams()</code> and <code>useSearchParams()</code> from <code>next/navigation</code>. Inside a client component you can also unwrap the <code>params</code> Promise with React's <code>use(params)</code>.</div></div>
+      </section>
+
+      <section class="note-section" id="special-files" data-level="inter" data-title="Loading, error &amp; 404 UI">
+        <h2><span class="sec-icon"><i class="bi bi-shield-check"></i></span>Loading, error &amp; not-found UI <span class="lvl inter">Intermediate</span></h2>
+        <p>Next.js wraps your page in React boundaries automatically, based on these special files:</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-boxes"></i> How Next.js nests the special files</div>
+          <div style="max-width:520px;margin:auto;font-family:var(--font-mono);font-size:.85rem">
+            <div class="p-2 rounded-3" style="border:2px solid var(--accent)"><b>&lt;Layout&gt;</b> <span class="text-body-secondary">layout.tsx</span>
+              <div class="p-2 mt-2 rounded-3" style="border:2px dashed var(--lvl-adv)"><b>&lt;ErrorBoundary fallback=&lt;Error/&gt;&gt;</b> <span class="text-body-secondary">error.tsx</span>
+                <div class="p-2 mt-2 rounded-3" style="border:2px dashed var(--lvl-inter)"><b>&lt;Suspense fallback=&lt;Loading/&gt;&gt;</b> <span class="text-body-secondary">loading.tsx</span>
+                  <div class="p-2 mt-2 rounded-3" style="border:2px dashed #64748b"><b>&lt;NotFoundBoundary&gt;</b> <span class="text-body-secondary">not-found.tsx</span>
+                    <div class="p-2 mt-2 rounded-3 text-center" style="background:var(--soft)"><b>&lt;Page /&gt;</b> page.tsx</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="code-pair">
+          <div>
+            <script type="text/plain" class="code" data-lang="tsx" data-title="app/products/loading.tsx">
+              export default function Loading() {
+                return (
+                  <div className="d-flex justify-content-center py-5">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                  </div>
+                );
+              }
+            </script>
+          </div>
+          <div>
+            <script type="text/plain" class="code" data-lang="tsx" data-title="app/products/error.tsx">
+              "use client"; // error boundaries must be client components
+
+              export default function Error({ error, reset }: {
+                error: Error & { digest?: string };
+                reset: () => void;
+              }) {
+                return (
+                  <div className="alert alert-danger">
+                    <h4>Something went wrong</h4>
+                    <p>{error.message}</p>
+                    <button className="btn btn-danger" onClick={() => reset()}>Try again</button>
+                  </div>
+                );
+              }
+            </script>
+          </div>
+        </div>
+      </section>
+
+      <section class="note-section" id="data-fetching" data-level="inter" data-title="Data fetching">
+        <h2><span class="sec-icon"><i class="bi bi-cloud-download"></i></span>Data fetching <span class="lvl inter">Intermediate</span></h2>
+        <p>In the App Router, the simplest approach is to <b>fetch in a Server Component</b> with <code>async/await</code>. You don't need <code>useEffect</code> or a loading state for this.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-shuffle"></i> Sequential vs parallel fetching</div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <p class="small fw-bold mb-2 no"><i class="bi bi-hourglass"></i> Sequential (waterfall) — slow</p>
+              <div class="d-flex flex-column gap-1 small">
+                <div class="rounded-2 px-2 py-1 text-white" style="background:#6366f1;width:45%">getUser() 1s</div>
+                <div class="rounded-2 px-2 py-1 text-white" style="background:#0ea5e9;width:45%;margin-left:45%">getPosts() 1s</div>
+                <div class="text-body-secondary">Total ≈ 2s</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <p class="small fw-bold mb-2 yes"><i class="bi bi-lightning"></i> Parallel (Promise.all) — fast</p>
+              <div class="d-flex flex-column gap-1 small">
+                <div class="rounded-2 px-2 py-1 text-white" style="background:#6366f1;width:45%">getUser() 1s</div>
+                <div class="rounded-2 px-2 py-1 text-white" style="background:#0ea5e9;width:45%">getPosts() 1s</div>
+                <div class="text-body-secondary">Total ≈ 1s</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="app/profile/[id]/page.tsx">
+          type User = { id: number; name: string };
+          type Post = { id: number; title: string };
+
+          async function getUser(id: string): Promise<User> {
+            const res = await fetch(`https://api.example.com/users/${id}`);
+            if (!res.ok) throw new Error("Failed to load user"); // caught by error.tsx
+            return res.json();
+          }
+          async function getPosts(id: string): Promise<Post[]> {
+            const res = await fetch(`https://api.example.com/users/${id}/posts`);
+            return res.json();
+          }
+
+          export default async function Profile({ params }: { params: Promise<{ id: string }> }) {
+            const { id } = await params;
+            // ✅ start both requests at once
+            const [user, posts] = await Promise.all([getUser(id), getPosts(id)]);
+
+            return (
+              <div className="container py-4">
+                <h1>{user.name}</h1>
+                <ul className="list-group">
+                  {posts.map((p) => <li key={p.id} className="list-group-item">{p.title}</li>)}
+                </ul>
+              </div>
+            );
+          }
+        </script>
+
+        <h3><i class="bi bi-laptop"></i> Fetching on the client (when needed)</h3>
+        <p>Fetch in the browser for data that depends on user interaction or changes very often, such as live search or polling. Use a library like <b>SWR</b> or <b>TanStack Query</b>. They handle caching, retries and revalidation for you.</p>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="components/LiveStock.tsx">
+          "use client";
+          import useSWR from "swr";
+
+          const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+          export default function LiveStock({ id }: { id: number }) {
+            const { data, error, isLoading } = useSWR(`/api/stock/${id}`, fetcher, { refreshInterval: 5000 });
+            if (isLoading) return <span className="placeholder col-2" />;
+            if (error) return <span className="text-danger">Error</span>;
+            return <span className="badge text-bg-info">{data.qty} left</span>;
+          }
+        </script>
+      </section>
+
+      <section class="note-section" id="forms" data-level="inter" data-title="Forms &amp; Server Actions">
+        <h2><span class="sec-icon"><i class="bi bi-ui-checks"></i></span>Forms &amp; Server Actions <span class="lvl inter">Intermediate</span></h2>
+        <p>A <span class="kw">Server Action</span> is an async function marked with <code>"use server"</code>. You can pass it straight to a form's <code>action</code>. Next.js turns it into a POST request behind the scenes, so you don't have to write an API route.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-send"></i> Server Action flow</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-ui-checks"></i>&lt;form action={createTodo}&gt;</div>
+            <div class="arrow">POST (automatic)</div>
+            <div class="node hl"><i class="bi bi-gear"></i>createTodo(formData)<small>"use server" — runs on server</small></div>
+            <div class="arrow">save</div>
+            <div class="node alt"><i class="bi bi-database"></i>PostgreSQL</div>
+            <div class="arrow">revalidatePath</div>
+            <div class="node ok"><i class="bi bi-arrow-clockwise"></i>UI refreshed</div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="app/todos/actions.ts">
+          "use server";
+          import { revalidatePath } from "next/cache";
+          import { db } from "@/lib/db";
+
+          export type FormState = { error?: string; success?: boolean };
+
+          export async function createTodo(prev: FormState, formData: FormData): Promise<FormState> {
+            const title = String(formData.get("title") ?? "").trim();
+            if (title.length < 3) return { error: "Title must be at least 3 characters" };
+
+            await db.query("INSERT INTO todos (title) VALUES ($1)", [title]);
+            revalidatePath("/todos");           // refresh the cached page
+            return { success: true };
+          }
+        </script>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="app/todos/TodoForm.tsx">
+          "use client";
+          import { useActionState } from "react";
+          import { useFormStatus } from "react-dom";
+          import { createTodo, type FormState } from "./actions";
+
+          function SubmitButton() {
+            const { pending } = useFormStatus();            // true while the action runs
+            return (
+              <button className="btn btn-primary" disabled={pending}>
+                {pending ? "Saving…" : "Add"}
+              </button>
+            );
+          }
+
+          export default function TodoForm() {
+            const [state, formAction] = useActionState<FormState, FormData>(createTodo, {});
+            return (
+              <form action={formAction} className="d-flex gap-2">
+                <input name="title" className={`form-control ${state.error ? "is-invalid" : ""}`} />
+                <SubmitButton />
+                {state.error && <div className="invalid-feedback d-block">{state.error}</div>}
+              </form>
+            );
+          }
+        </script>
+        <div class="callout danger"><i class="bi bi-shield-exclamation"></i><div><strong class="t">Security</strong>A Server Action is a <b>public endpoint</b>. Always validate the input (for example with Zod) and check that the user is authenticated <i>inside</i> the action.</div></div>
+      </section>
+
+      <!-- ===================== ADVANCED ===================== -->
+      <div class="level-banner adv"><i class="bi bi-3-circle-fill"></i><div>Level 3 — Advanced<small>Rendering strategies, caching, streaming, advanced routing and performance</small></div></div>
+
+      <section class="note-section" id="rendering" data-level="adv" data-title="Rendering strategies">
+        <h2><span class="sec-icon"><i class="bi bi-cpu"></i></span>Rendering strategies <span class="lvl adv">Advanced</span></h2>
+        <p>The main question is <b>when</b> the HTML gets built. Next.js chooses the strategy per route, based on what your code uses.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-clock-history"></i> When is the HTML generated?</div>
+          <svg class="dg" viewBox="0 0 680 230" role="img" aria-label="Timeline: SSG at build time, ISR at build time and re-generated periodically, SSR on every request, CSR in the browser">
+            <line x1="40" y1="200" x2="650" y2="200" class="line-muted"/>
+            <text x="110" y="222" text-anchor="middle" class="txt-sm">Build time</text>
+            <text x="330" y="222" text-anchor="middle" class="txt-sm">Request time (server)</text>
+            <text x="560" y="222" text-anchor="middle" class="txt-sm">In the browser</text>
+            <rect x="40" y="20" width="140" height="38" rx="8" class="box-hl"/><text x="110" y="44" text-anchor="middle" class="txt">SSG</text>
+            <rect x="40" y="70" width="140" height="38" rx="8" class="box-hl"/><text x="110" y="94" text-anchor="middle" class="txt">ISR</text>
+            <path d="M180 89 C 250 89, 250 89, 300 89" class="line-muted"/><text x="300" y="84" class="txt-sm">re-built every N sec</text>
+            <rect x="260" y="120" width="140" height="38" rx="8" class="box-hl"/><text x="330" y="144" text-anchor="middle" class="txt">SSR</text>
+            <rect x="490" y="160" width="140" height="34" rx="8" class="box"/><text x="560" y="182" text-anchor="middle" class="txt">CSR</text>
+          </svg>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Strategy</th><th>HTML built</th><th>Best for</th><th>How in App Router</th></tr></thead>
+            <tbody>
+              <tr><td><b>SSG</b> Static</td><td>Once, at build</td><td>Marketing pages, docs, blogs</td><td>Default when no dynamic APIs are used</td></tr>
+              <tr><td><b>ISR</b> Incremental</td><td>At build, then re-built in the background</td><td>Product pages, news</td><td><code>export const revalidate = 60</code></td></tr>
+              <tr><td><b>SSR</b> Dynamic</td><td>On every request</td><td>Dashboards, personalised pages</td><td>Using <code>cookies()</code>, <code>headers()</code> or <code>searchParams</code>, or <code>cache: "no-store"</code></td></tr>
+              <tr><td><b>CSR</b> Client</td><td>In the browser</td><td>Highly interactive widgets</td><td><code>"use client"</code> + SWR / useEffect</td></tr>
+              <tr><td><b>Streaming</b></td><td>In chunks</td><td>Pages with some slow parts</td><td><code>&lt;Suspense&gt;</code> / <code>loading.tsx</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout tip"><i class="bi bi-lightbulb"></i><div><strong class="t">Check the build output</strong><code>npm run build</code> prints each route with a symbol: <b>○</b> Static, <b>●</b> SSG with params, <b>ƒ</b> Dynamic. Use it to confirm which strategy each page got.</div></div>
+      </section>
+
+      <section class="note-section" id="caching" data-level="adv" data-title="Caching &amp; revalidation">
+        <h2><span class="sec-icon"><i class="bi bi-archive"></i></span>Caching &amp; revalidation <span class="lvl adv">Advanced</span></h2>
+        <p>Next.js caches work at several layers. Learn these layers and you'll understand most "why is my data stale?" bugs.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-layers"></i> Cache layers</div>
+          <div class="stack">
+            <div class="layer" style="--lc:#8b5cf6"><i class="bi bi-browser-chrome"></i><div><b>Client Router Cache</b><small>In the browser: visited/prefetched route segments for fast back/forward</small></div></div>
+            <div class="layer" style="--lc:#0ea5e9"><i class="bi bi-file-earmark-richtext"></i><div><b>Full Route Cache</b><small>On the server: rendered HTML + RSC payload of static routes</small></div></div>
+            <div class="layer" style="--lc:#10b981"><i class="bi bi-cloud-arrow-down"></i><div><b>Data Cache</b><small>On the server: results of fetch() / "use cache" functions, persisted across requests</small></div></div>
+            <div class="layer" style="--lc:#f59e0b"><i class="bi bi-arrow-repeat"></i><div><b>Request Memoization</b><small>Same fetch called twice in one render → executed once</small></div></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="Controlling the cache">
+          // Opt INTO caching a fetch for 1 hour (time-based revalidation)
+          await fetch(url, { next: { revalidate: 3600 } });
+
+          // Tag it so you can invalidate on demand
+          await fetch(url, { next: { tags: ["products"] } });
+
+          // Never cache (always fresh)
+          await fetch(url, { cache: "no-store" });
+
+          // Route-level setting (top of page.tsx / layout.tsx)
+          export const revalidate = 60;              // ISR: rebuild at most every 60s
+
+          // On-demand invalidation — inside a Server Action or Route Handler
+          import { revalidatePath, revalidateTag } from "next/cache";
+          revalidatePath("/products");               // refresh one path
+          revalidateTag("products", "max");          // refresh everything tagged "products"
+        </script>
+        <div class="callout info"><i class="bi bi-stars"></i><div><strong class="t">Newer model: "use cache"</strong>Since Next.js 16 you can turn on <b>Cache Components</b> (<code>cacheComponents: true</code> in <code>next.config.ts</code>). Then you mark a component or function with <code>"use cache"</code> to cache it, and control its lifetime with <code>cacheLife()</code> and <code>cacheTag()</code>. Read the official caching docs for the version you're using, because the defaults have changed between major releases.</div></div>
+      </section>
+
+      <section class="note-section" id="streaming" data-level="adv" data-title="Streaming &amp; Suspense">
+        <h2><span class="sec-icon"><i class="bi bi-water"></i></span>Streaming &amp; Suspense <span class="lvl adv">Advanced</span></h2>
+        <p>Without streaming, the slowest query blocks the whole page. With <code>&lt;Suspense&gt;</code>, the page shell appears at once and the slow parts <b>stream in</b> as they finish.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-film"></i> What the user sees over time</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-0-circle"></i>0 ms<small>Header + skeletons</small></div>
+            <div class="arrow">stream</div>
+            <div class="node"><i class="bi bi-1-circle"></i>200 ms<small>Product info appears</small></div>
+            <div class="arrow">stream</div>
+            <div class="node ok"><i class="bi bi-2-circle"></i>1500 ms<small>Slow reviews appear</small></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="app/product/[id]/page.tsx">
+          import { Suspense } from "react";
+
+          export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+            const { id } = await params;
+            return (
+              <div className="container py-4">
+                <Suspense fallback={<div className="placeholder-glow"><span className="placeholder col-6" /></div>}>
+                  <ProductInfo id={id} />      {/* fast */}
+                </Suspense>
+
+                <Suspense fallback={<p className="text-muted">Loading reviews…</p>}>
+                  <Reviews id={id} />          {/* slow — doesn't block ProductInfo */}
+                </Suspense>
+              </div>
+            );
+          }
+
+          async function Reviews({ id }: { id: string }) {
+            const reviews = await getReviews(id);   // e.g. 1.5s
+            return <ul>{reviews.map((r) => <li key={r.id}>{r.text}</li>)}</ul>;
+          }
+        </script>
+      </section>
+
+      <section class="note-section" id="advanced-routing" data-level="adv" data-title="Advanced routing patterns">
+        <h2><span class="sec-icon"><i class="bi bi-bezier2"></i></span>Advanced routing patterns <span class="lvl adv">Advanced</span></h2>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="n-card"><div class="ic"><i class="bi bi-collection"></i></div><h5>Route groups <code>(name)</code></h5><p>Organize routes without changing the URL. <code>app/(marketing)/about</code> → <code>/about</code>. Each group can have its own layout.</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic"><i class="bi bi-eye-slash"></i></div><h5>Private folders <code>_name</code></h5><p><code>app/_components</code> is ignored by the router, so it's a safe place for helper files.</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic"><i class="bi bi-layout-split"></i></div><h5>Parallel routes <code>@slot</code></h5><p>Render several pages in one layout at the same time. Useful for dashboards: <code>@analytics</code> + <code>@team</code>.</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic"><i class="bi bi-window-stack"></i></div><h5>Intercepting routes <code>(.)photo</code></h5><p>Open <code>/photo/1</code> in a <b>modal</b> while browsing the feed. A refresh shows the full page.</p></div></div>
+        </div>
+        <div class="diagram tree-wrap">
+          <div class="diagram-title"><i class="bi bi-folder"></i> Example structure</div>
+          <ul class="tree">
+            <li><i class="bi bi-folder2-open"></i> app/
+              <ul>
+                <li><i class="bi bi-folder2-open"></i> (marketing)/ <span class="cm">← group: public site layout</span>
+                  <ul><li><i class="bi bi-filetype-tsx"></i> layout.tsx</li><li><i class="bi bi-folder2"></i> pricing/page.tsx <span class="cm">→ /pricing</span></li></ul></li>
+                <li><i class="bi bi-folder2-open"></i> (app)/ <span class="cm">← group: logged-in layout</span>
+                  <ul><li><i class="bi bi-folder2-open"></i> dashboard/
+                    <ul><li><i class="bi bi-filetype-tsx"></i> layout.tsx <span class="cm">← receives {children, analytics, team}</span></li>
+                        <li><i class="bi bi-folder2"></i> @analytics/page.tsx</li>
+                        <li><i class="bi bi-folder2"></i> @team/page.tsx</li></ul></li></ul></li>
+                <li><i class="bi bi-folder2-open"></i> feed/
+                  <ul><li><i class="bi bi-folder2"></i> (.)photo/[id]/page.tsx <span class="cm">← modal version</span></li></ul></li>
+                <li><i class="bi bi-folder2"></i> photo/[id]/page.tsx <span class="cm">← full-page version</span></li>
+              </ul></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="note-section" id="performance" data-level="adv" data-title="Performance &amp; SEO">
+        <h2><span class="sec-icon"><i class="bi bi-speedometer"></i></span>Performance &amp; SEO <span class="lvl adv">Advanced</span></h2>
+        <div class="row g-3 mb-3">
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-hourglass-top"></i></div><h5>LCP</h5><p>Largest Contentful Paint. Should be under 2.5s. Use <code>priority</code> on the hero image.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-hand-index"></i></div><h5>INP</h5><p>Interaction to Next Paint. Keep JS small and move logic to the server.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-arrows-move"></i></div><h5>CLS</h5><p>Cumulative Layout Shift. <code>next/image</code> and <code>next/font</code> prevent it.</p></div></div>
+        </div>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="Lazy-load heavy client components">
+          import dynamic from "next/dynamic";
+
+          // Chart library loads only when this component renders
+          const SalesChart = dynamic(() => import("@/components/SalesChart"), {
+            loading: () => <div className="spinner-border" />,
+          });
+        </script>
+        <script type="text/plain" class="code" data-lang="ts" data-title="app/sitemap.ts  +  app/robots.ts">
+          import type { MetadataRoute } from "next";
+
+          export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+            const posts = await getAllPosts();
+            return [
+              { url: "https://myshop.com", lastModified: new Date() },
+              ...posts.map((p) => ({ url: `https://myshop.com/blog/${p.slug}`, lastModified: p.updatedAt })),
+            ];
+          }
+        </script>
+        <h3><i class="bi bi-list-check"></i> Performance checklist</h3>
+        <ul class="list-unstyled">
+          <li><i class="bi bi-check2-square yes me-2"></i>Keep <code>"use client"</code> as low in the tree as possible</li>
+          <li><i class="bi bi-check2-square yes me-2"></i>Fetch in parallel and stream slow parts with Suspense</li>
+          <li><i class="bi bi-check2-square yes me-2"></i>Use <code>next/image</code>, <code>next/font</code> and <code>next/script</code> (<code>strategy="lazyOnload"</code>)</li>
+          <li><i class="bi bi-check2-square yes me-2"></i>Lazy-load heavy libraries with <code>next/dynamic</code></li>
+          <li><i class="bi bi-check2-square yes me-2"></i>Cache data that doesn't change often</li>
+          <li><i class="bi bi-check2-square yes me-2"></i>Check bundle size with <code>@next/bundle-analyzer</code></li>
+        </ul>
+      </section>
+
+      <section class="note-section" id="deployment" data-level="adv" data-title="Env variables &amp; deployment">
+        <h2><span class="sec-icon"><i class="bi bi-cloud-upload"></i></span>Environment variables &amp; deployment <span class="lvl adv">Advanced</span></h2>
+        <script type="text/plain" class="code" data-lang="env" data-title=".env.local">
+          # Server-only (never reaches the browser)
+          DATABASE_URL=postgres://user:pass@localhost:5432/shop
+          JWT_SECRET=super-secret
+
+          # Exposed to the browser — prefix with NEXT_PUBLIC_
+          NEXT_PUBLIC_SITE_URL=http://localhost:3000
+        </script>
+        <div class="callout danger"><i class="bi bi-key"></i><div><strong class="t">Never</strong> put secrets in <code>NEXT_PUBLIC_</code> variables. They are copied into the JavaScript that is sent to every visitor.</div></div>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-rocket"></i> Deploy pipeline</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-github"></i>git push</div>
+            <div class="arrow">triggers</div>
+            <div class="node hl"><i class="bi bi-hammer"></i>next build<small>CI / Vercel</small></div>
+            <div class="arrow">deploys</div>
+            <div class="node"><i class="bi bi-globe"></i>Edge / Node server<small>Vercel, Docker, VPS</small></div>
+            <div class="arrow">serves</div>
+            <div class="node ok"><i class="bi bi-people"></i>Users</div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Option</th><th>How</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td><i class="bi bi-triangle-fill"></i> Vercel</td><td>Import the GitHub repo</td><td>Zero config. Made by the creators of Next.js.</td></tr>
+              <tr><td><i class="bi bi-box-seam"></i> Docker</td><td><code>output: "standalone"</code> in next.config</td><td>Small image. Run it anywhere.</td></tr>
+              <tr><td><i class="bi bi-hdd"></i> VPS</td><td><code>npm run build &amp;&amp; npm start</code> + PM2 + Nginx</td><td>Full control</td></tr>
+              <tr><td><i class="bi bi-file-earmark-zip"></i> Static export</td><td><code>output: "export"</code></td><td>No server features (no SSR, actions or API routes)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================== EXTRA ===================== -->
+      <div class="level-banner basic" style="--lvl-basic:#8b5cf6"><i class="bi bi-star-fill" style="color:#8b5cf6"></i><div>Practice &amp; Review<small>Interview questions, exercises and a cheat sheet</small></div></div>
+
+      <section class="note-section" id="interview" data-level="extra" data-title="Interview questions">
+        <h2><span class="sec-icon"><i class="bi bi-chat-square-quote"></i></span>Interview questions</h2>
+        <div class="accordion accordion-notes" id="faqFE">
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#fe1">What is the difference between the App Router and the Pages Router?</button></h2>
+            <div id="fe1" class="accordion-collapse collapse" data-bs-parent="#faqFE"><div class="accordion-body">The App Router (<code>app/</code>) is the modern router. It is built on React Server Components and supports nested layouts, streaming and Server Actions. The Pages Router (<code>pages/</code>) is the older one, with <code>getServerSideProps</code> and <code>getStaticProps</code>. New projects should use the App Router.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#fe2">What is hydration, and what causes a hydration error?</button></h2>
+            <div id="fe2" class="accordion-collapse collapse" data-bs-parent="#faqFE"><div class="accordion-body">Hydration is when React attaches event handlers to HTML that was rendered on the server. An error happens when the server HTML differs from what the client renders. Common causes are <code>Date.now()</code>, <code>Math.random()</code>, reading <code>window</code> during render, and invalid HTML nesting such as a <code>&lt;div&gt;</code> inside a <code>&lt;p&gt;</code>.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#fe3">When would you choose a Client Component?</button></h2>
+            <div id="fe3" class="accordion-collapse collapse" data-bs-parent="#faqFE"><div class="accordion-body">When you need interactivity (<code>onClick</code>, <code>onChange</code>), state or effects (<code>useState</code>, <code>useEffect</code>), browser-only APIs, or a library that depends on them. Use a Server Component for everything else.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#fe4">Explain SSG vs SSR vs ISR.</button></h2>
+            <div id="fe4" class="accordion-collapse collapse" data-bs-parent="#faqFE"><div class="accordion-body"><b>SSG</b> builds the HTML once, at build time. <b>SSR</b> builds it on every request. <b>ISR</b> serves the static HTML and rebuilds it in the background after the revalidate period, so you get static speed with data that stays fairly fresh.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#fe5">Why use &lt;Link&gt; instead of &lt;a&gt;?</button></h2>
+            <div id="fe5" class="accordion-collapse collapse" data-bs-parent="#faqFE"><div class="accordion-body"><code>&lt;Link&gt;</code> navigates on the client without a full page reload, prefetches routes when they come into view, and keeps shared layouts mounted.</div></div></div>
+        </div>
+        <h3><i class="bi bi-pencil-square"></i> Practice projects</h3>
+        <ol class="steps">
+          <li><b>Portfolio site</b>Static pages, a Bootstrap navbar, <code>next/image</code> and metadata.</li>
+          <li><b>Blog</b>Dynamic routes <code>[slug]</code>, <code>generateStaticParams</code>, a loading UI and a 404 page.</li>
+          <li><b>Todo app</b>Server Actions, <code>useActionState</code> and <code>revalidatePath</code>, with PostgreSQL behind it (see the Backend page).</li>
+          <li><b>Dashboard</b>Route groups, parallel routes, Suspense streaming and auth-protected pages.</li>
+        </ol>
+      </section>
+
+      <section class="note-section" id="cheatsheet" data-level="extra" data-title="Cheat sheet">
+        <h2><span class="sec-icon"><i class="bi bi-journal-code"></i></span>Cheat sheet</h2>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-file-earmark"></i> Files</h6><ul>
+            <li><code>page.tsx</code><span>route UI</span></li><li><code>layout.tsx</code><span>shared wrapper</span></li><li><code>loading.tsx</code><span>suspense fallback</span></li><li><code>error.tsx</code><span>error boundary</span></li><li><code>not-found.tsx</code><span>404</span></li><li><code>route.ts</code><span>API endpoint</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-signpost"></i> Folders</h6><ul>
+            <li><code>[id]</code><span>dynamic</span></li><li><code>[...all]</code><span>catch-all</span></li><li><code>[[...all]]</code><span>optional catch-all</span></li><li><code>(group)</code><span>no URL segment</span></li><li><code>_private</code><span>not a route</span></li><li><code>@slot</code><span>parallel route</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-compass"></i> Navigation</h6><ul>
+            <li><code>&lt;Link href&gt;</code><span>links</span></li><li><code>useRouter()</code><span>client push/back</span></li><li><code>usePathname()</code><span>current path</span></li><li><code>redirect()</code><span>server redirect</span></li><li><code>notFound()</code><span>trigger 404</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-archive"></i> Caching</h6><ul>
+            <li><code>revalidate = 60</code><span>ISR</span></li><li><code>cache: "no-store"</code><span>always fresh</span></li><li><code>next: { tags }</code><span>tag a fetch</span></li><li><code>revalidatePath()</code><span>purge a path</span></li><li><code>revalidateTag()</code><span>purge a tag</span></li></ul></div></div>
+        </div>
+      </section>
+
+      <div class="row g-3 pager my-4">
+        <div class="col-md-6"><a href="index.html"><small><i class="bi bi-arrow-left"></i> Previous</small><b>Home &amp; roadmap</b></a></div>
+        <div class="col-md-6 text-md-end"><a href="backend.html"><small>Next <i class="bi bi-arrow-right"></i></small><b>Backend with Next.js + PostgreSQL</b></a></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<button class="toc-fab d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas"><i class="bi bi-list-ul me-1"></i> Contents</button>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocLabel">
+  <div class="offcanvas-header"><h5 class="offcanvas-title" id="tocLabel">Frontend notes</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
+  <div class="offcanvas-body"><nav class="toc" data-toc style="position:static;max-height:none"></nav></div>
+</div>
+
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

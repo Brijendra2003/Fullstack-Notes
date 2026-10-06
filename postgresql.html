@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PostgreSQL Notes</title>
+  <meta name="description" content="PostgreSQL notes from basic to advanced: tables, CRUD, joins, aggregates, indexes, transactions, window functions, JSONB and performance.">
+  <script>try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('fsn-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <style>
+    .db-table { font-family: var(--font-mono); font-size: .82rem; border-collapse: separate; border-spacing: 0; margin: auto; background: var(--bs-body-bg); border-radius: 10px; overflow: hidden; border: 1.5px solid var(--bs-border-color); }
+    .db-table caption { caption-side: top; text-align: center; font-weight: 700; color: var(--accent); font-family: var(--font-sans); }
+    .db-table th { background: var(--soft); padding: .45rem .8rem; border-bottom: 1.5px solid var(--bs-border-color); }
+    .db-table td { padding: .4rem .8rem; border-bottom: 1px solid var(--bs-border-color); }
+    .db-table tr:last-child td { border-bottom: none; }
+    .db-table .pk { color: #eab308; } .db-table .fk { color: var(--accent); }
+    .db-table tr.hl td { background: color-mix(in srgb, var(--lvl-basic) 14%, transparent); }
+    .db-table tr.dim td { opacity: .35; }
+    .venn-card { text-align: center; border: 1px solid var(--bs-border-color); border-radius: 12px; padding: .75rem; background: var(--bs-body-bg); height: 100%; }
+    .venn-card b { display: block; font-family: var(--font-mono); font-size: .85rem; }
+    .venn-card small { color: var(--bs-secondary-color); }
+  </style>
+</head>
+<body class="page-postgres" data-page="postgres">
+<div id="site-nav"></div>
+
+<header class="hero">
+  <div class="container-xl">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb small mb-3"><li class="breadcrumb-item"><a href="index.html">Home</a></li><li class="breadcrumb-item active">PostgreSQL</li></ol></nav>
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <div class="hero-icon"><i class="bi bi-database"></i></div>
+      <div><span class="chip"><i class="bi bi-3-circle"></i> Module 3</span></div>
+    </div>
+    <h1>PostgreSQL</h1>
+    <p class="lead">The world's most advanced open-source relational database. Learn SQL from your first table to joins, indexes, transactions, window functions and query tuning.</p>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <span class="chip"><i class="bi bi-table"></i> Tables &amp; CRUD</span>
+      <span class="chip"><i class="bi bi-intersect"></i> Joins</span>
+      <span class="chip"><i class="bi bi-lightning"></i> Indexes</span>
+      <span class="chip"><i class="bi bi-arrow-left-right"></i> Transactions</span>
+      <span class="chip"><i class="bi bi-braces"></i> JSONB</span>
+    </div>
+  </div>
+</header>
+
+<div class="container-xl">
+  <div class="row g-4">
+    <aside class="col-lg-3 d-none d-lg-block toc-col"><nav class="toc pt-4" data-toc></nav></aside>
+
+    <main class="col-lg-9 notes">
+
+      <div class="level-banner basic"><i class="bi bi-1-circle-fill"></i><div>Level 1 — Basics<small>Databases, setup, data types, tables and CRUD</small></div></div>
+
+      <section class="note-section" id="intro" data-level="basic" data-title="What is PostgreSQL?">
+        <h2><span class="sec-icon"><i class="bi bi-database"></i></span>What is PostgreSQL? <span class="lvl basic">Basic</span></h2>
+        <p>A <span class="kw">database</span> stores data permanently and lets you query it quickly. PostgreSQL (often called "Postgres") is a <span class="kw">relational database</span>. Data lives in <b>tables</b> made of <b>rows</b> and <b>columns</b>, and tables are linked through <b>keys</b>.</p>
+        <div class="callout analogy"><i class="bi bi-table"></i><div><strong class="t">Think of it like this</strong>A database is an <b>Excel workbook</b>. Each <b>table</b> is a sheet, each <b>column</b> is a header with a fixed data type, and each <b>row</b> is one record. Unlike Excel, the rules (types, uniqueness, links between sheets) are <b>enforced</b>.</div></div>
+
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-table"></i> Anatomy of a table</div>
+          <div class="table-responsive m-0">
+            <table class="db-table">
+              <caption>users</caption>
+              <thead><tr><th><i class="bi bi-key-fill pk"></i> id</th><th>name</th><th>email</th><th>city</th></tr></thead>
+              <tbody>
+                <tr><td>1</td><td>Asha</td><td>asha@mail.com</td><td>Pune</td></tr>
+                <tr class="hl"><td>2</td><td>Rahul</td><td>rahul@mail.com</td><td>Delhi</td></tr>
+                <tr><td>3</td><td>Meera</td><td>meera@mail.com</td><td>Pune</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="diagram-caption"><i class="bi bi-key-fill pk" style="color:#eab308"></i> <b>Primary key</b> = unique ID for each row · highlighted = one <b>row</b> (record) · each header = a <b>column</b> (field)</p>
+        </div>
+
+        <h3><i class="bi bi-star"></i> Why Postgres?</h3>
+        <div class="row g-3">
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-shield-check"></i></div><h5>Reliable (ACID)</h5><p>Your data is safe even if the server crashes mid-write.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-puzzle"></i></div><h5>Feature-rich</h5><p>JSONB, arrays, full-text search, window functions, extensions such as PostGIS and pgvector.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-unlock"></i></div><h5>Free &amp; open source</h5><p>Used by Instagram, Reddit and Apple, and hosted by Neon, Supabase, RDS and others.</p></div></div>
+        </div>
+
+        <h3><i class="bi bi-tags"></i> Kinds of SQL commands</h3>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Group</th><th>Purpose</th><th>Commands</th></tr></thead>
+            <tbody>
+              <tr><td><b>DDL</b> Definition</td><td>Define structure</td><td><code>CREATE</code> <code>ALTER</code> <code>DROP</code> <code>TRUNCATE</code></td></tr>
+              <tr><td><b>DML</b> Manipulation</td><td>Change data</td><td><code>INSERT</code> <code>UPDATE</code> <code>DELETE</code></td></tr>
+              <tr><td><b>DQL</b> Query</td><td>Read data</td><td><code>SELECT</code></td></tr>
+              <tr><td><b>DCL</b> Control</td><td>Permissions</td><td><code>GRANT</code> <code>REVOKE</code></td></tr>
+              <tr><td><b>TCL</b> Transaction</td><td>Group changes</td><td><code>BEGIN</code> <code>COMMIT</code> <code>ROLLBACK</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="note-section" id="setup" data-level="basic" data-title="Install &amp; psql">
+        <h2><span class="sec-icon"><i class="bi bi-terminal"></i></span>Install &amp; the psql shell <span class="lvl basic">Basic</span></h2>
+        <div class="row g-3 mb-3">
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-windows"></i></div><h5>Windows / macOS</h5><p>Download the installer from postgresql.org. It includes pgAdmin, a GUI tool.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-box-seam"></i></div><h5>Docker (recommended)</h5><p>One command, and it's easy to reset.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-cloud"></i></div><h5>Cloud</h5><p>Neon or Supabase give you a free hosted Postgres with a connection URL.</p></div></div>
+        </div>
+        <script type="text/plain" class="code" data-lang="bash" data-title="terminal — run Postgres with Docker">
+          docker run --name pg -e POSTGRES_PASSWORD=secret -p 5432:5432 -d postgres:17
+
+          # open the psql shell inside the container
+          docker exec -it pg psql -U postgres
+        </script>
+        <script type="text/plain" class="code" data-lang="sql" data-title="psql">
+          CREATE DATABASE shop;      -- create a database
+          \c shop                    -- connect to it
+        </script>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-terminal"></i> psql meta-commands</h6><ul>
+            <li><code>\l</code><span>list databases</span></li><li><code>\c dbname</code><span>connect</span></li><li><code>\dt</code><span>list tables</span></li><li><code>\d users</code><span>describe table</span></li><li><code>\du</code><span>list roles</span></li><li><code>\x</code><span>expanded output</span></li><li><code>\i file.sql</code><span>run a file</span></li><li><code>\q</code><span>quit</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-tools"></i> GUI tools</h6><ul>
+            <li>pgAdmin<span>official GUI</span></li><li>DBeaver<span>free, multi-DB</span></li><li>TablePlus<span>fast &amp; clean</span></li><li>VS Code<span>PostgreSQL extension</span></li></ul></div></div>
+        </div>
+        <div class="callout tip"><i class="bi bi-lightbulb"></i><div><strong class="t">Syntax rules</strong>End every SQL statement with <code>;</code>. Keywords are case-insensitive, but people usually write them in UPPERCASE. Use <code>'single quotes'</code> for text and <code>"double quotes"</code> for identifiers. Comments start with <code>--</code>.</div></div>
+      </section>
+
+      <section class="note-section" id="data-types" data-level="basic" data-title="Data types">
+        <h2><span class="sec-icon"><i class="bi bi-123"></i></span>Data types <span class="lvl basic">Basic</span></h2>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Category</th><th>Type</th><th>Use for</th><th>Example</th></tr></thead>
+            <tbody>
+              <tr><td rowspan="4"><i class="bi bi-123"></i> Numbers</td><td><code>INT</code> / <code>BIGINT</code></td><td>Whole numbers</td><td>42</td></tr>
+              <tr><td><code>SERIAL</code> / <code>GENERATED … AS IDENTITY</code></td><td>Auto-increment IDs</td><td>1, 2, 3…</td></tr>
+              <tr><td><code>NUMERIC(10,2)</code></td><td>Money and exact decimals</td><td>1999.99</td></tr>
+              <tr><td><code>REAL</code> / <code>DOUBLE PRECISION</code></td><td>Scientific values (approximate)</td><td>3.14159</td></tr>
+              <tr><td rowspan="2"><i class="bi bi-fonts"></i> Text</td><td><code>VARCHAR(n)</code></td><td>Text with a max length</td><td>'Asha'</td></tr>
+              <tr><td><code>TEXT</code></td><td>Any length</td><td>blog body</td></tr>
+              <tr><td><i class="bi bi-toggle-on"></i> Boolean</td><td><code>BOOLEAN</code></td><td>true/false</td><td>TRUE</td></tr>
+              <tr><td rowspan="3"><i class="bi bi-calendar"></i> Date/time</td><td><code>DATE</code></td><td>Calendar date</td><td>'2026-10-06'</td></tr>
+              <tr><td><code>TIMESTAMPTZ</code></td><td>Date + time with time zone (<b>preferred</b>)</td><td>NOW()</td></tr>
+              <tr><td><code>INTERVAL</code></td><td>A duration</td><td>'7 days'</td></tr>
+              <tr><td><i class="bi bi-fingerprint"></i> IDs</td><td><code>UUID</code></td><td>Globally unique IDs</td><td>gen_random_uuid()</td></tr>
+              <tr><td rowspan="2"><i class="bi bi-braces"></i> Structured</td><td><code>JSONB</code></td><td>Flexible JSON documents</td><td>'{"color":"red"}'</td></tr>
+              <tr><td><code>TEXT[]</code></td><td>Arrays</td><td>'{a,b,c}'</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout warn"><i class="bi bi-currency-rupee"></i><div><strong class="t">Money</strong>Never store money in <code>REAL</code>/<code>FLOAT</code>, because <code>0.1 + 0.2 ≠ 0.3</code>. Use <code>NUMERIC(12,2)</code>, or an <code>INT</code> holding paise/cents.</div></div>
+      </section>
+
+      <section class="note-section" id="tables" data-level="basic" data-title="Create tables &amp; constraints">
+        <h2><span class="sec-icon"><i class="bi bi-plus-square"></i></span>Creating tables &amp; constraints <span class="lvl basic">Basic</span></h2>
+        <p><span class="kw">Constraints</span> are rules the database enforces, so bad data can't get in, whichever app writes it.</p>
+        <script type="text/plain" class="code" data-lang="sql" data-title="schema.sql">
+          CREATE TABLE users (
+            id          INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,   -- modern auto-increment
+            email       VARCHAR(255) NOT NULL UNIQUE,                   -- required + no duplicates
+            name        VARCHAR(100) NOT NULL,
+            age         INT CHECK (age >= 13),                          -- custom rule
+            is_active   BOOLEAN NOT NULL DEFAULT TRUE,                  -- default value
+            created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+          );
+
+          CREATE TABLE posts (
+            id          INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+            user_id     INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,  -- foreign key
+            title       TEXT NOT NULL,
+            body        TEXT,
+            published   BOOLEAN DEFAULT FALSE
+          );
+        </script>
+        <div class="row g-3">
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-key-fill"></i></div><h5>PRIMARY KEY</h5><p>Unique + not null. Identifies each row.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-link-45deg"></i></div><h5>FOREIGN KEY</h5><p>Must match a row in another table (<code>REFERENCES</code>).</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-asterisk"></i></div><h5>NOT NULL</h5><p>A value is required.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-1-square"></i></div><h5>UNIQUE</h5><p>No duplicates allowed in this column.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-check2-circle"></i></div><h5>CHECK</h5><p>A custom condition, e.g. <code>price &gt;= 0</code>.</p></div></div>
+          <div class="col-md-6 col-xl-4"><div class="n-card"><div class="ic"><i class="bi bi-arrow-down-circle"></i></div><h5>DEFAULT</h5><p>The value used when none is given.</p></div></div>
+        </div>
+        <h3><i class="bi bi-trash3"></i> ON DELETE options</h3>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Option</th><th>When the parent user is deleted…</th></tr></thead>
+            <tbody>
+              <tr><td><code>CASCADE</code></td><td>Their posts are deleted too</td></tr>
+              <tr><td><code>SET NULL</code></td><td><code>posts.user_id</code> becomes NULL</td></tr>
+              <tr><td><code>RESTRICT</code> / default</td><td>The delete is blocked while posts exist</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3><i class="bi bi-pencil"></i> Changing a table</h3>
+        <script type="text/plain" class="code" data-lang="sql">
+          ALTER TABLE users ADD COLUMN phone VARCHAR(20);
+          ALTER TABLE users RENAME COLUMN name TO full_name;
+          ALTER TABLE users ALTER COLUMN phone SET NOT NULL;
+          ALTER TABLE users DROP COLUMN phone;
+          DROP TABLE IF EXISTS posts;          -- deletes the table and all its data!
+          TRUNCATE TABLE logs;                 -- deletes all rows, keeps the table
+        </script>
+      </section>
+
+      <section class="note-section" id="crud" data-level="basic" data-title="CRUD: Insert, Select, Update, Delete">
+        <h2><span class="sec-icon"><i class="bi bi-arrow-repeat"></i></span>CRUD: Insert, Select, Update, Delete <span class="lvl basic">Basic</span></h2>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-arrow-repeat"></i> CRUD ↔ SQL ↔ HTTP</div>
+          <div class="row g-2 text-center">
+            <div class="col-6 col-md-3"><div class="n-card"><div class="ic mx-auto"><i class="bi bi-plus-lg"></i></div><h5>Create</h5><p><code>INSERT</code><br>POST</p></div></div>
+            <div class="col-6 col-md-3"><div class="n-card"><div class="ic mx-auto"><i class="bi bi-eye"></i></div><h5>Read</h5><p><code>SELECT</code><br>GET</p></div></div>
+            <div class="col-6 col-md-3"><div class="n-card"><div class="ic mx-auto"><i class="bi bi-pencil"></i></div><h5>Update</h5><p><code>UPDATE</code><br>PATCH/PUT</p></div></div>
+            <div class="col-6 col-md-3"><div class="n-card"><div class="ic mx-auto"><i class="bi bi-trash"></i></div><h5>Delete</h5><p><code>DELETE</code><br>DELETE</p></div></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="sql" data-title="Create">
+          INSERT INTO users (email, name, age) VALUES ('asha@mail.com', 'Asha', 24);
+
+          -- many rows at once + get the generated values back
+          INSERT INTO users (email, name, age) VALUES
+            ('rahul@mail.com', 'Rahul', 30),
+            ('meera@mail.com', 'Meera', 27)
+          RETURNING id, email;
+        </script>
+        <script type="text/plain" class="code" data-lang="sql" data-title="Read">
+          SELECT * FROM users;                          -- all columns
+          SELECT id, name FROM users;                   -- specific columns
+          SELECT name AS "Full Name" FROM users;        -- alias
+          SELECT * FROM users WHERE id = 2;             -- one row
+        </script>
+        <script type="text/plain" class="code" data-lang="sql" data-title="Update">
+          UPDATE users SET age = 25, name = 'Asha K' WHERE id = 1 RETURNING *;
+        </script>
+        <script type="text/plain" class="code" data-lang="sql" data-title="Delete">
+          DELETE FROM users WHERE id = 3;
+        </script>
+        <div class="callout danger"><i class="bi bi-exclamation-octagon"></i><div><strong class="t">Always use WHERE with UPDATE / DELETE</strong><code>DELETE FROM users;</code> deletes <b>every</b> row. To be safe, run the matching <code>SELECT … WHERE</code> first, or wrap the change in <code>BEGIN; … ROLLBACK;</code> to test it.</div></div>
+        <h3><i class="bi bi-arrow-repeat"></i> Upsert (insert or update)</h3>
+        <script type="text/plain" class="code" data-lang="sql">
+          INSERT INTO users (email, name) VALUES ('asha@mail.com', 'Asha New')
+          ON CONFLICT (email) DO UPDATE SET name = EXCLUDED.name;   -- EXCLUDED = the row you tried to insert
+        </script>
+      </section>
+
+      <section class="note-section" id="filtering" data-level="basic" data-title="Filtering, sorting &amp; limits">
+        <h2><span class="sec-icon"><i class="bi bi-funnel"></i></span>Filtering, sorting &amp; limits <span class="lvl basic">Basic</span></h2>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-sort-down"></i> Logical order a SELECT is executed in</div>
+          <div class="flow keep-row" style="gap:.25rem">
+            <div class="node" style="min-width:auto">FROM / JOIN</div><div class="arrow" style="min-width:30px"></div>
+            <div class="node" style="min-width:auto">WHERE</div><div class="arrow" style="min-width:30px"></div>
+            <div class="node" style="min-width:auto">GROUP BY</div><div class="arrow" style="min-width:30px"></div>
+            <div class="node" style="min-width:auto">HAVING</div><div class="arrow" style="min-width:30px"></div>
+            <div class="node hl" style="min-width:auto">SELECT</div><div class="arrow" style="min-width:30px"></div>
+            <div class="node" style="min-width:auto">ORDER BY</div><div class="arrow" style="min-width:30px"></div>
+            <div class="node" style="min-width:auto">LIMIT</div>
+          </div>
+          <p class="diagram-caption">That's why you can't use a SELECT alias inside WHERE: WHERE runs before SELECT.</p>
+        </div>
+        <script type="text/plain" class="code" data-lang="sql">
+          SELECT * FROM products
+          WHERE price BETWEEN 500 AND 2000          -- range (inclusive)
+            AND category IN ('mouse', 'keyboard')   -- list
+            AND name ILIKE '%pro%'                  -- case-insensitive pattern (% = anything, _ = one char)
+            AND discount IS NOT NULL                -- NULL needs IS / IS NOT, never "= NULL"
+            AND NOT is_deleted
+          ORDER BY price DESC, name ASC             -- sort
+          LIMIT 10 OFFSET 20;                       -- page 3 (10 per page)
+
+          SELECT DISTINCT city FROM users;          -- unique values
+        </script>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Operator</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><code>=  &lt;&gt;  !=  &lt;  &gt;  &lt;=  &gt;=</code></td><td>Comparison</td></tr>
+              <tr><td><code>AND  OR  NOT</code></td><td>Combine conditions (use brackets!)</td></tr>
+              <tr><td><code>LIKE 'a%'</code> / <code>ILIKE</code></td><td>Pattern (case-sensitive / insensitive)</td></tr>
+              <tr><td><code>IN (…)</code>, <code>BETWEEN a AND b</code></td><td>List, range</td></tr>
+              <tr><td><code>IS NULL</code>, <code>COALESCE(x, 'default')</code></td><td>Handle missing values</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="quiz" data-answer="c" data-explain="NULL means 'unknown', so = NULL is never true. Use IS NULL.">
+          <p class="q">Which query finds users with no phone number?</p>
+          <button data-opt="a">WHERE phone = NULL</button>
+          <button data-opt="b">WHERE phone == ''</button>
+          <button data-opt="c">WHERE phone IS NULL</button>
+        </div>
+      </section>
+
+      <div class="level-banner inter"><i class="bi bi-2-circle-fill"></i><div>Level 2 — Intermediate<small>Aggregates, relationships, joins, subqueries, CTEs and normalization</small></div></div>
+
+      <section class="note-section" id="aggregates" data-level="inter" data-title="Aggregates &amp; GROUP BY">
+        <h2><span class="sec-icon"><i class="bi bi-bar-chart"></i></span>Aggregates &amp; GROUP BY <span class="lvl inter">Intermediate</span></h2>
+        <p><span class="kw">Aggregate functions</span> turn many rows into one value: <code>COUNT</code>, <code>SUM</code>, <code>AVG</code>, <code>MIN</code> and <code>MAX</code>. <code>GROUP BY</code> makes one group per distinct value, and the aggregate runs once per group.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-collection"></i> GROUP BY city → COUNT(*)</div>
+          <div class="flow">
+            <div class="table-responsive m-0">
+              <table class="db-table"><thead><tr><th>name</th><th>city</th></tr></thead>
+                <tbody><tr><td>Asha</td><td style="color:#6366f1">Pune</td></tr><tr><td>Rahul</td><td style="color:#10b981">Delhi</td></tr><tr><td>Meera</td><td style="color:#6366f1">Pune</td></tr><tr><td>Vikram</td><td style="color:#6366f1">Pune</td></tr><tr><td>Neha</td><td style="color:#10b981">Delhi</td></tr></tbody></table>
+            </div>
+            <div class="arrow">GROUP BY city</div>
+            <div class="table-responsive m-0">
+              <table class="db-table"><thead><tr><th>city</th><th>count</th></tr></thead>
+                <tbody><tr><td style="color:#6366f1">Pune</td><td>3</td></tr><tr><td style="color:#10b981">Delhi</td><td>2</td></tr></tbody></table>
+            </div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="sql">
+          SELECT city, COUNT(*) AS total_users, AVG(age)::NUMERIC(5,1) AS avg_age
+          FROM users
+          WHERE is_active                  -- filters ROWS (before grouping)
+          GROUP BY city
+          HAVING COUNT(*) >= 2             -- filters GROUPS (after grouping)
+          ORDER BY total_users DESC;
+
+          -- total revenue per month
+          SELECT DATE_TRUNC('month', created_at) AS month, SUM(total) AS revenue
+          FROM orders GROUP BY 1 ORDER BY 1;
+        </script>
+        <div class="vs">
+          <div class="side"><h5><i class="bi bi-funnel"></i> WHERE</h5><ul><li>Filters individual rows</li><li>Runs <b>before</b> GROUP BY</li><li>Can't use aggregates</li></ul></div>
+          <div class="mid">VS</div>
+          <div class="side"><h5><i class="bi bi-funnel-fill"></i> HAVING</h5><ul><li>Filters groups</li><li>Runs <b>after</b> GROUP BY</li><li>Uses aggregates: <code>HAVING SUM(x) &gt; 100</code></li></ul></div>
+        </div>
+      </section>
+
+      <section class="note-section" id="relationships" data-level="inter" data-title="Relationships &amp; keys">
+        <h2><span class="sec-icon"><i class="bi bi-diagram-2"></i></span>Relationships &amp; keys <span class="lvl inter">Intermediate</span></h2>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-diagram-3"></i> ER diagram — a small shop</div>
+          <svg class="dg" viewBox="0 0 700 300" role="img" aria-label="ER diagram: users one-to-many orders; orders many-to-many products through order_items; users one-to-one profiles">
+            <!-- users -->
+            <rect x="20" y="20" width="160" height="110" rx="10" class="box-hl"/>
+            <text x="100" y="42" text-anchor="middle" class="txt">users</text>
+            <line x1="20" y1="52" x2="180" y2="52" class="line-muted" style="stroke-dasharray:none"/>
+            <text x="32" y="74" class="txt-sm">🔑 id</text><text x="32" y="94" class="txt-sm">email</text><text x="32" y="114" class="txt-sm">name</text>
+            <!-- profiles -->
+            <rect x="20" y="190" width="160" height="90" rx="10" class="box"/>
+            <text x="100" y="212" text-anchor="middle" class="txt">profiles</text>
+            <text x="32" y="240" class="txt-sm">🔑 id</text><text x="32" y="260" class="txt-sm">🔗 user_id UNIQUE</text>
+            <!-- orders -->
+            <rect x="270" y="20" width="160" height="110" rx="10" class="box-hl"/>
+            <text x="350" y="42" text-anchor="middle" class="txt">orders</text>
+            <text x="282" y="74" class="txt-sm">🔑 id</text><text x="282" y="94" class="txt-sm">🔗 user_id</text><text x="282" y="114" class="txt-sm">total</text>
+            <!-- order_items -->
+            <rect x="270" y="180" width="160" height="110" rx="10" class="box"/>
+            <text x="350" y="202" text-anchor="middle" class="txt">order_items</text>
+            <text x="282" y="230" class="txt-sm">🔗 order_id</text><text x="282" y="250" class="txt-sm">🔗 product_id</text><text x="282" y="270" class="txt-sm">qty</text>
+            <!-- products -->
+            <rect x="520" y="180" width="160" height="110" rx="10" class="box-hl"/>
+            <text x="600" y="202" text-anchor="middle" class="txt">products</text>
+            <text x="532" y="230" class="txt-sm">🔑 id</text><text x="532" y="250" class="txt-sm">name</text><text x="532" y="270" class="txt-sm">price</text>
+            <!-- relations -->
+            <path d="M180 75 L270 75" class="line"/><text x="225" y="68" text-anchor="middle" class="txt-acc">1 : N</text>
+            <path d="M100 130 L100 190" class="line"/><text x="128" y="165" text-anchor="middle" class="txt-acc">1 : 1</text>
+            <path d="M350 130 L350 180" class="line"/><text x="378" y="160" text-anchor="middle" class="txt-acc">1 : N</text>
+            <path d="M430 235 L520 235" class="line"/><text x="475" y="228" text-anchor="middle" class="txt-acc">N : 1</text>
+            <text x="560" y="80" text-anchor="middle" class="txt-sm">orders ⇄ products = N : M</text>
+            <text x="560" y="98" text-anchor="middle" class="txt-sm">(via join table order_items)</text>
+          </svg>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-1-circle"></i></div><h5>One-to-One</h5><p>user ↔ profile. FK + <code>UNIQUE</code> on the child.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-diagram-2"></i></div><h5>One-to-Many</h5><p>user → orders. The FK goes on the "many" side (<code>orders.user_id</code>).</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-diagram-3"></i></div><h5>Many-to-Many</h5><p>orders ↔ products. Needs a <b>junction table</b> with two FKs.</p></div></div>
+        </div>
+        <script type="text/plain" class="code" data-lang="sql" data-title="many-to-many junction table">
+          CREATE TABLE order_items (
+            order_id   INT REFERENCES orders(id)   ON DELETE CASCADE,
+            product_id INT REFERENCES products(id),
+            qty        INT NOT NULL CHECK (qty > 0),
+            unit_price NUMERIC(10,2) NOT NULL,          -- price at time of purchase
+            PRIMARY KEY (order_id, product_id)          -- composite key
+          );
+        </script>
+      </section>
+
+      <section class="note-section" id="joins" data-level="inter" data-title="JOINs">
+        <h2><span class="sec-icon"><i class="bi bi-intersect"></i></span>JOINs <span class="lvl inter">Intermediate</span></h2>
+        <p>A <span class="kw">JOIN</span> combines rows from two tables using a matching column, usually FK = PK. A = <code>users</code> (left), B = <code>orders</code> (right).</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-intersect"></i> Which rows come back?</div>
+          <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+            <defs>
+              <clipPath id="clipA"><circle cx="45" cy="45" r="36"/></clipPath>
+              <clipPath id="clipB"><circle cx="85" cy="45" r="36"/></clipPath>
+            </defs>
+          </svg>
+          <div class="row g-3">
+            <div class="col-6 col-md-3"><div class="venn-card">
+              <svg class="dg" viewBox="0 0 130 90" style="max-width:150px"><circle cx="85" cy="45" r="36" class="venn-a" clip-path="url(#clipA)"/><circle cx="45" cy="45" r="36" class="venn-off"/><circle cx="85" cy="45" r="36" class="venn-off"/><text x="22" y="50" class="txt-sm">A</text><text x="100" y="50" class="txt-sm">B</text></svg>
+              <b>INNER JOIN</b><small>only matches in both</small></div></div>
+            <div class="col-6 col-md-3"><div class="venn-card">
+              <svg class="dg" viewBox="0 0 130 90" style="max-width:150px"><circle cx="45" cy="45" r="36" class="venn-a"/><circle cx="45" cy="45" r="36" class="venn-off"/><circle cx="85" cy="45" r="36" class="venn-off"/><text x="22" y="50" class="txt-sm">A</text><text x="100" y="50" class="txt-sm">B</text></svg>
+              <b>LEFT JOIN</b><small>all of A + matches (else NULL)</small></div></div>
+            <div class="col-6 col-md-3"><div class="venn-card">
+              <svg class="dg" viewBox="0 0 130 90" style="max-width:150px"><circle cx="85" cy="45" r="36" class="venn-a"/><circle cx="45" cy="45" r="36" class="venn-off"/><circle cx="85" cy="45" r="36" class="venn-off"/><text x="22" y="50" class="txt-sm">A</text><text x="100" y="50" class="txt-sm">B</text></svg>
+              <b>RIGHT JOIN</b><small>all of B + matches</small></div></div>
+            <div class="col-6 col-md-3"><div class="venn-card">
+              <svg class="dg" viewBox="0 0 130 90" style="max-width:150px"><circle cx="45" cy="45" r="36" class="venn-a"/><circle cx="85" cy="45" r="36" class="venn-a"/><circle cx="45" cy="45" r="36" class="venn-off"/><circle cx="85" cy="45" r="36" class="venn-off"/><text x="22" y="50" class="txt-sm">A</text><text x="100" y="50" class="txt-sm">B</text></svg>
+              <b>FULL JOIN</b><small>everything from both</small></div></div>
+          </div>
+        </div>
+
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-table"></i> Example: users LEFT JOIN orders</div>
+          <div class="flow">
+            <table class="db-table"><caption>users</caption><thead><tr><th>id</th><th>name</th></tr></thead><tbody><tr><td>1</td><td>Asha</td></tr><tr><td>2</td><td>Rahul</td></tr><tr><td>3</td><td>Meera</td></tr></tbody></table>
+            <div class="arrow">+</div>
+            <table class="db-table"><caption>orders</caption><thead><tr><th>id</th><th>user_id</th><th>total</th></tr></thead><tbody><tr><td>10</td><td>1</td><td>500</td></tr><tr><td>11</td><td>1</td><td>300</td></tr><tr><td>12</td><td>2</td><td>900</td></tr></tbody></table>
+            <div class="arrow">LEFT JOIN</div>
+            <table class="db-table"><caption>result</caption><thead><tr><th>name</th><th>order</th><th>total</th></tr></thead><tbody><tr><td>Asha</td><td>10</td><td>500</td></tr><tr><td>Asha</td><td>11</td><td>300</td></tr><tr><td>Rahul</td><td>12</td><td>900</td></tr><tr class="hl"><td>Meera</td><td>NULL</td><td>NULL</td></tr></tbody></table>
+          </div>
+          <p class="diagram-caption">Meera has no orders. A <b>LEFT</b> JOIN keeps her with NULLs; an <b>INNER</b> JOIN would drop her.</p>
+        </div>
+        <script type="text/plain" class="code" data-lang="sql">
+          -- INNER: users who have orders
+          SELECT u.name, o.id AS order_id, o.total
+          FROM users u
+          INNER JOIN orders o ON o.user_id = u.id;
+
+          -- LEFT: every user + order count (0 if none)
+          SELECT u.name, COUNT(o.id) AS orders
+          FROM users u
+          LEFT JOIN orders o ON o.user_id = u.id
+          GROUP BY u.id, u.name;
+
+          -- Anti-join: users with NO orders
+          SELECT u.* FROM users u
+          LEFT JOIN orders o ON o.user_id = u.id
+          WHERE o.id IS NULL;
+
+          -- 3-table join (many-to-many)
+          SELECT o.id, p.name, oi.qty
+          FROM orders o
+          JOIN order_items oi ON oi.order_id = o.id
+          JOIN products p     ON p.id = oi.product_id;
+        </script>
+        <div class="quiz" data-answer="b" data-explain="LEFT JOIN keeps every row from the left table and fills NULL where there's no match.">
+          <p class="q">You need ALL products, including ones never ordered. Which join from products to order_items?</p>
+          <button data-opt="a">INNER JOIN</button>
+          <button data-opt="b">LEFT JOIN</button>
+          <button data-opt="c">CROSS JOIN</button>
+        </div>
+      </section>
+
+      <section class="note-section" id="subqueries" data-level="inter" data-title="Subqueries &amp; CTEs">
+        <h2><span class="sec-icon"><i class="bi bi-layers-half"></i></span>Subqueries &amp; CTEs <span class="lvl inter">Intermediate</span></h2>
+        <p>A <span class="kw">subquery</span> is a query inside another query. A <span class="kw">CTE</span> (<code>WITH</code>) gives a subquery a name, so complex SQL reads top-to-bottom like steps.</p>
+        <script type="text/plain" class="code" data-lang="sql" data-title="Subqueries">
+          -- products more expensive than the average
+          SELECT name, price FROM products
+          WHERE price > (SELECT AVG(price) FROM products);
+
+          -- users who placed an order (EXISTS is fast)
+          SELECT * FROM users u
+          WHERE EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id);
+        </script>
+        <script type="text/plain" class="code" data-lang="sql" data-title="CTE — readable steps">
+          WITH monthly AS (                         -- step 1: revenue per user per month
+            SELECT user_id, DATE_TRUNC('month', created_at) AS month, SUM(total) AS spent
+            FROM orders
+            GROUP BY 1, 2
+          ),
+          vip AS (                                  -- step 2: who spent > 10k in any month
+            SELECT DISTINCT user_id FROM monthly WHERE spent > 10000
+          )
+          SELECT u.name, u.email                    -- step 3: final result
+          FROM users u JOIN vip ON vip.user_id = u.id;
+        </script>
+        <script type="text/plain" class="code" data-lang="sql" data-title="Recursive CTE — category tree">
+          WITH RECURSIVE tree AS (
+            SELECT id, name, parent_id, 1 AS depth FROM categories WHERE parent_id IS NULL
+            UNION ALL
+            SELECT c.id, c.name, c.parent_id, t.depth + 1
+            FROM categories c JOIN tree t ON c.parent_id = t.id
+          )
+          SELECT repeat('  ', depth - 1) || name AS category FROM tree;
+        </script>
+      </section>
+
+      <section class="note-section" id="normalization" data-level="inter" data-title="Normalization">
+        <h2><span class="sec-icon"><i class="bi bi-grid-3x3"></i></span>Normalization (table design) <span class="lvl inter">Intermediate</span></h2>
+        <p><span class="kw">Normalization</span> means storing each fact in <b>one place</b>, so updates can't leave copies that disagree.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-scissors"></i> Splitting a bad table</div>
+          <div class="flow">
+            <table class="db-table"><caption style="color:var(--lvl-adv)">❌ orders (repeated data)</caption><thead><tr><th>id</th><th>customer</th><th>cust_email</th><th>products</th></tr></thead>
+              <tbody><tr><td>1</td><td>Asha</td><td>asha@m.com</td><td>Mouse, Pad</td></tr><tr><td>2</td><td>Asha</td><td>asha@m.com</td><td>Keyboard</td></tr></tbody></table>
+            <div class="arrow">normalize</div>
+            <div class="d-flex flex-column gap-2">
+              <table class="db-table"><caption style="color:var(--lvl-basic)">✓ users</caption><thead><tr><th>id</th><th>name</th><th>email</th></tr></thead><tbody><tr><td>1</td><td>Asha</td><td>asha@m.com</td></tr></tbody></table>
+              <table class="db-table"><caption style="color:var(--lvl-basic)">✓ orders</caption><thead><tr><th>id</th><th>user_id</th></tr></thead><tbody><tr><td>1</td><td>1</td></tr><tr><td>2</td><td>1</td></tr></tbody></table>
+            </div>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Form</th><th>Rule</th><th>Fix</th></tr></thead>
+            <tbody>
+              <tr><td><b>1NF</b></td><td>One value per cell, no repeating groups</td><td>"Mouse, Pad" → separate rows in <code>order_items</code></td></tr>
+              <tr><td><b>2NF</b></td><td>Every column depends on the <i>whole</i> key</td><td>Product name moves to <code>products</code>, not <code>order_items</code></td></tr>
+              <tr><td><b>3NF</b></td><td>No column depends on another non-key column</td><td>customer_email moves to <code>users</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout info"><i class="bi bi-info-circle"></i><div><strong class="t">Denormalize on purpose</strong>Sometimes you copy data for speed or history. For example, <code>order_items.unit_price</code> stores the price <i>at purchase time</i>. That's a deliberate choice.</div></div>
+      </section>
+
+      <div class="level-banner adv"><i class="bi bi-3-circle-fill"></i><div>Level 3 — Advanced<small>Indexes, transactions, window functions, views, triggers, JSONB and tuning</small></div></div>
+
+      <section class="note-section" id="indexes" data-level="adv" data-title="Indexes">
+        <h2><span class="sec-icon"><i class="bi bi-lightning"></i></span>Indexes <span class="lvl adv">Advanced</span></h2>
+        <div class="callout analogy"><i class="bi bi-book"></i><div><strong class="t">Book index</strong>To find "JOIN" in a 900-page book, you check the index at the back and go straight to page 412. You don't read every page. A database index works the same way for a column.</div></div>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-diagram-3"></i> B-tree index on users.email</div>
+          <svg class="dg" viewBox="0 0 640 220" role="img" aria-label="B-tree: root node splits into three branch nodes which point to leaf pages with row pointers">
+            <rect x="250" y="10" width="140" height="40" rx="8" class="box-hl"/><text x="320" y="35" text-anchor="middle" class="txt">[ g | p ]</text>
+            <path d="M270 50 L110 90" class="line"/><path d="M320 50 L320 90" class="line"/><path d="M370 50 L530 90" class="line"/>
+            <rect x="40" y="90" width="140" height="40" rx="8" class="box"/><text x="110" y="115" text-anchor="middle" class="txt-sm">a … f</text>
+            <rect x="250" y="90" width="140" height="40" rx="8" class="box"/><text x="320" y="115" text-anchor="middle" class="txt-sm">g … o</text>
+            <rect x="460" y="90" width="140" height="40" rx="8" class="box"/><text x="530" y="115" text-anchor="middle" class="txt-sm">p … z</text>
+            <path d="M110 130 L110 160" class="line-muted"/><path d="M320 130 L320 160" class="line-muted"/><path d="M530 130 L530 160" class="line-muted"/>
+            <rect x="30" y="160" width="160" height="44" rx="8" class="box"/><text x="110" y="180" text-anchor="middle" class="txt-sm">asha@… → row 1</text><text x="110" y="196" text-anchor="middle" class="txt-sm">dev@… → row 9</text>
+            <rect x="240" y="160" width="160" height="44" rx="8" class="box"/><text x="320" y="180" text-anchor="middle" class="txt-sm">meera@… → row 3</text><text x="320" y="196" text-anchor="middle" class="txt-sm">neha@… → row 5</text>
+            <rect x="450" y="160" width="160" height="44" rx="8" class="box"/><text x="530" y="180" text-anchor="middle" class="txt-sm">rahul@… → row 2</text><text x="530" y="196" text-anchor="middle" class="txt-sm">vikram@… → row 4</text>
+          </svg>
+          <p class="diagram-caption">A lookup takes a few hops (O(log n)) instead of scanning millions of rows.</p>
+        </div>
+        <script type="text/plain" class="code" data-lang="sql">
+          CREATE INDEX idx_orders_user_id ON orders (user_id);               -- FK columns: index them!
+          CREATE UNIQUE INDEX idx_users_email ON users (LOWER(email));       -- expression index
+          CREATE INDEX idx_orders_user_date ON orders (user_id, created_at DESC); -- composite (order matters)
+          CREATE INDEX idx_active_users ON users (email) WHERE is_active;    -- partial index
+          CREATE INDEX idx_products_attrs ON products USING GIN (attrs);     -- for JSONB / arrays / full-text
+          CREATE INDEX CONCURRENTLY idx_big ON big_table (col);              -- no table lock (production)
+        </script>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="cheat"><h6 style="color:var(--lvl-basic)"><i class="bi bi-hand-thumbs-up"></i> Index when…</h6><ul>
+            <li>Column is used in WHERE / JOIN / ORDER BY<span></span></li><li>Foreign keys<span></span></li><li>High selectivity (many distinct values)<span></span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6 style="color:var(--lvl-adv)"><i class="bi bi-hand-thumbs-down"></i> Avoid when…</h6><ul>
+            <li>Tiny tables<span></span></li><li>Write-heavy tables (each index slows INSERT/UPDATE)<span></span></li><li>Low selectivity (e.g. a boolean)<span></span></li></ul></div></div>
+        </div>
+      </section>
+
+      <section class="note-section" id="explain" data-level="adv" data-title="EXPLAIN &amp; query tuning">
+        <h2><span class="sec-icon"><i class="bi bi-search"></i></span>EXPLAIN ANALYZE &amp; tuning <span class="lvl adv">Advanced</span></h2>
+        <script type="text/plain" class="code" data-lang="sql">
+          EXPLAIN ANALYZE
+          SELECT * FROM orders WHERE user_id = 42;
+        </script>
+        <div class="code-pair">
+          <div>
+            <div class="lbl bad"><i class="bi bi-x-circle-fill"></i> Before index</div>
+            <script type="text/plain" class="code" data-lang="plaintext">
+              Seq Scan on orders  (cost=0.00..18334.00 rows=52)
+                Filter: (user_id = 42)
+                Rows Removed by Filter: 999948
+              Execution Time: 92.4 ms
+            </script>
+          </div>
+          <div>
+            <div class="lbl good"><i class="bi bi-check-circle-fill"></i> After CREATE INDEX</div>
+            <script type="text/plain" class="code" data-lang="plaintext">
+              Index Scan using idx_orders_user_id on orders
+                Index Cond: (user_id = 42)
+              Execution Time: 0.08 ms
+            </script>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Plan node</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><code>Seq Scan</code></td><td>Reads the whole table. Fine for small tables, a red flag for big ones.</td></tr>
+              <tr><td><code>Index Scan</code> / <code>Index Only Scan</code></td><td>Uses an index (best)</td></tr>
+              <tr><td><code>Bitmap Heap Scan</code></td><td>An index finds many rows, which are then fetched in batches</td></tr>
+              <tr><td><code>Nested Loop</code> / <code>Hash Join</code> / <code>Merge Join</code></td><td>Join strategies</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout tip"><i class="bi bi-lightbulb"></i><div><strong class="t">Index killers</strong><code>WHERE LOWER(email) = …</code> doesn't use a plain index on <code>email</code>; create an expression index instead. A leading wildcard like <code>LIKE '%abc'</code> can't use a B-tree. Run <code>ANALYZE</code> after big imports so the planner has fresh statistics.</div></div>
+      </section>
+
+      <section class="note-section" id="transactions" data-level="adv" data-title="Transactions &amp; ACID">
+        <h2><span class="sec-icon"><i class="bi bi-arrow-left-right"></i></span>Transactions &amp; ACID <span class="lvl adv">Advanced</span></h2>
+        <div class="row g-3 mb-3">
+          <div class="col-6 col-md-3"><div class="n-card text-center"><div class="ic mx-auto"><i class="bi bi-1-square"></i></div><h5>Atomic</h5><p>All or nothing</p></div></div>
+          <div class="col-6 col-md-3"><div class="n-card text-center"><div class="ic mx-auto"><i class="bi bi-check2-square"></i></div><h5>Consistent</h5><p>Constraints always hold</p></div></div>
+          <div class="col-6 col-md-3"><div class="n-card text-center"><div class="ic mx-auto"><i class="bi bi-person-lock"></i></div><h5>Isolated</h5><p>Concurrent transactions don't interfere</p></div></div>
+          <div class="col-6 col-md-3"><div class="n-card text-center"><div class="ic mx-auto"><i class="bi bi-hdd"></i></div><h5>Durable</h5><p>Committed data survives a crash</p></div></div>
+        </div>
+        <script type="text/plain" class="code" data-lang="sql" data-title="Bank transfer">
+          BEGIN;
+            UPDATE accounts SET balance = balance - 500 WHERE id = 1;
+            UPDATE accounts SET balance = balance + 500 WHERE id = 2;
+            -- if anything fails → ROLLBACK; both updates are undone
+          COMMIT;
+
+          -- savepoints: partial rollback
+          BEGIN;
+            INSERT INTO logs VALUES ('step 1');
+            SAVEPOINT s1;
+            INSERT INTO logs VALUES ('step 2 - risky');
+            ROLLBACK TO s1;                       -- undo only step 2
+          COMMIT;
+        </script>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Isolation level</th><th>Prevents</th><th>Note</th></tr></thead>
+            <tbody>
+              <tr><td><code>READ COMMITTED</code></td><td>Dirty reads</td><td>Postgres default</td></tr>
+              <tr><td><code>REPEATABLE READ</code></td><td>+ non-repeatable reads</td><td>A consistent snapshot for the whole transaction</td></tr>
+              <tr><td><code>SERIALIZABLE</code></td><td>+ serialization anomalies</td><td>Safest. Be ready to retry on error 40001.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout info"><i class="bi bi-info-circle"></i><div><strong class="t">MVCC</strong>Postgres uses <b>Multi-Version Concurrency Control</b>: readers never block writers, and writers never block readers. Each transaction sees a snapshot. <code>VACUUM</code> (usually run by autovacuum) cleans up old row versions.</div></div>
+      </section>
+
+      <section class="note-section" id="window" data-level="adv" data-title="Window functions">
+        <h2><span class="sec-icon"><i class="bi bi-window"></i></span>Window functions <span class="lvl adv">Advanced</span></h2>
+        <p>Like <code>GROUP BY</code>, but <b>rows are not collapsed</b>. Each row keeps its detail and also gets a value calculated over a "window" of related rows.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-window"></i> RANK() OVER (PARTITION BY dept ORDER BY salary DESC)</div>
+          <div class="table-responsive m-0">
+            <table class="db-table">
+              <thead><tr><th>name</th><th>dept</th><th>salary</th><th style="color:var(--accent)">rank</th></tr></thead>
+              <tbody>
+                <tr><td>Asha</td><td style="color:#6366f1">Eng</td><td>150k</td><td><b>1</b></td></tr>
+                <tr><td>Rahul</td><td style="color:#6366f1">Eng</td><td>120k</td><td><b>2</b></td></tr>
+                <tr><td>Dev</td><td style="color:#6366f1">Eng</td><td>120k</td><td><b>2</b></td></tr>
+                <tr><td>Meera</td><td style="color:#10b981">Sales</td><td>90k</td><td><b>1</b></td></tr>
+                <tr><td>Neha</td><td style="color:#10b981">Sales</td><td>70k</td><td><b>2</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="diagram-caption">Ranking restarts in each partition (dept). Every row is still there.</p>
+        </div>
+        <script type="text/plain" class="code" data-lang="sql">
+          SELECT
+            name, dept, salary,
+            ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC) AS row_num,   -- 1,2,3 (no ties)
+            RANK()       OVER (PARTITION BY dept ORDER BY salary DESC) AS rnk,       -- 1,2,2,4
+            DENSE_RANK() OVER (PARTITION BY dept ORDER BY salary DESC) AS dense,     -- 1,2,2,3
+            AVG(salary)  OVER (PARTITION BY dept)                      AS dept_avg,
+            salary - LAG(salary) OVER (ORDER BY hired_at)              AS diff_prev  -- previous row
+          FROM employees;
+
+          -- running total of revenue by day
+          SELECT day, revenue,
+                 SUM(revenue) OVER (ORDER BY day) AS running_total
+          FROM daily_sales;
+
+          -- top 3 products per category
+          SELECT * FROM (
+            SELECT *, ROW_NUMBER() OVER (PARTITION BY category ORDER BY sales DESC) AS rn
+            FROM products
+          ) t WHERE rn <= 3;
+        </script>
+      </section>
+
+      <section class="note-section" id="views-functions" data-level="adv" data-title="Views, functions &amp; triggers">
+        <h2><span class="sec-icon"><i class="bi bi-gear-wide-connected"></i></span>Views, functions &amp; triggers <span class="lvl adv">Advanced</span></h2>
+        <div class="row g-3 mb-2">
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-eye"></i></div><h5>View</h5><p>A saved query you can use like a table. It always shows live data.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-camera"></i></div><h5>Materialized view</h5><p>Stores the result. Very fast to read, but you must <code>REFRESH</code> it.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-lightning-charge"></i></div><h5>Trigger</h5><p>Runs a function automatically on INSERT, UPDATE or DELETE.</p></div></div>
+        </div>
+        <script type="text/plain" class="code" data-lang="sql" data-title="Views">
+          CREATE VIEW active_users AS
+            SELECT id, name, email FROM users WHERE is_active;
+
+          CREATE MATERIALIZED VIEW sales_summary AS
+            SELECT product_id, SUM(qty) AS units, SUM(qty * unit_price) AS revenue
+            FROM order_items GROUP BY product_id;
+
+          REFRESH MATERIALIZED VIEW CONCURRENTLY sales_summary;  -- needs a unique index
+        </script>
+        <script type="text/plain" class="code" data-lang="sql" data-title="Trigger: auto-update updated_at">
+          CREATE OR REPLACE FUNCTION set_updated_at() RETURNS TRIGGER AS $$
+          BEGIN
+            NEW.updated_at = NOW();
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql;
+
+          CREATE TRIGGER trg_products_updated
+          BEFORE UPDATE ON products
+          FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+        </script>
+      </section>
+
+      <section class="note-section" id="jsonb" data-level="adv" data-title="JSONB, arrays &amp; search">
+        <h2><span class="sec-icon"><i class="bi bi-braces"></i></span>JSONB, arrays &amp; full-text search <span class="lvl adv">Advanced</span></h2>
+        <p><code>JSONB</code> stores JSON in a binary format that can be indexed. Use it for <b>flexible attributes</b> (product specs, settings). Keep core fields in normal columns.</p>
+        <script type="text/plain" class="code" data-lang="sql">
+          ALTER TABLE products ADD COLUMN attrs JSONB DEFAULT '{}';
+          UPDATE products SET attrs = '{"color":"black","wireless":true,"dpi":[800,1600]}' WHERE id = 1;
+
+          SELECT attrs->'dpi'        FROM products;  -- -> returns JSON
+          SELECT attrs->>'color'     FROM products;  -- ->> returns TEXT
+          SELECT * FROM products WHERE attrs @> '{"wireless": true}';   -- contains (uses GIN index)
+          SELECT * FROM products WHERE attrs ? 'color';                 -- key exists
+          UPDATE products SET attrs = jsonb_set(attrs, '{color}', '"white"') WHERE id = 1;
+
+          -- Arrays
+          SELECT * FROM posts WHERE 'postgres' = ANY(tags);
+          SELECT * FROM posts WHERE tags @> ARRAY['sql','tips'];
+
+          -- Full-text search
+          SELECT title FROM posts
+          WHERE to_tsvector('english', title || ' ' || body) @@ plainto_tsquery('english', 'fast database');
+        </script>
+      </section>
+
+      <section class="note-section" id="security" data-level="adv" data-title="Roles, security &amp; backups">
+        <h2><span class="sec-icon"><i class="bi bi-person-lock"></i></span>Roles, security &amp; backups <span class="lvl adv">Advanced</span></h2>
+        <script type="text/plain" class="code" data-lang="sql" data-title="Least-privilege app user">
+          CREATE ROLE app_user WITH LOGIN PASSWORD 'strong-password';
+          GRANT CONNECT ON DATABASE shop TO app_user;
+          GRANT USAGE ON SCHEMA public TO app_user;
+          GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user;
+          GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO app_user;
+          -- app_user can't DROP tables or create roles 👍
+        </script>
+        <script type="text/plain" class="code" data-lang="sql" data-title="Row-Level Security (multi-tenant)">
+          ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+          CREATE POLICY own_notes ON notes
+            USING (user_id = current_setting('app.user_id')::INT);
+          -- the app runs: SET app.user_id = '42';  → only sees user 42's rows
+        </script>
+        <script type="text/plain" class="code" data-lang="bash" data-title="Backup &amp; restore">
+          pg_dump -U postgres -d shop -F c -f shop.dump        # backup (custom format)
+          pg_restore -U postgres -d shop_copy shop.dump         # restore
+          pg_dump -U postgres -d shop --schema-only > schema.sql
+        </script>
+      </section>
+
+      <div class="level-banner basic" style="--lvl-basic:#8b5cf6"><i class="bi bi-star-fill" style="color:#8b5cf6"></i><div>Practice &amp; Review<small>Interview questions, exercises and a cheat sheet</small></div></div>
+
+      <section class="note-section" id="interview" data-level="extra" data-title="Interview questions">
+        <h2><span class="sec-icon"><i class="bi bi-chat-square-quote"></i></span>Interview questions</h2>
+        <div class="accordion accordion-notes" id="faqPG">
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#pg1">DELETE vs TRUNCATE vs DROP?</button></h2>
+            <div id="pg1" class="accordion-collapse collapse" data-bs-parent="#faqPG"><div class="accordion-body"><b>DELETE</b> removes the rows that match a WHERE clause, fires triggers and can be rolled back. <b>TRUNCATE</b> quickly removes <i>all</i> rows and keeps the table. <b>DROP</b> removes the table itself.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#pg2">WHERE vs HAVING?</button></h2>
+            <div id="pg2" class="accordion-collapse collapse" data-bs-parent="#faqPG"><div class="accordion-body">WHERE filters rows before grouping. HAVING filters groups after aggregation, so it can use <code>COUNT</code>, <code>SUM</code> and the other aggregates.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#pg3">What is an index, and what does it cost?</button></h2>
+            <div id="pg3" class="accordion-collapse collapse" data-bs-parent="#faqPG"><div class="accordion-body">An index is a separate data structure (a B-tree by default) that speeds up lookups. It costs disk space, and it slows down writes because every INSERT and UPDATE must also update the index.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#pg4">RANK vs DENSE_RANK vs ROW_NUMBER?</button></h2>
+            <div id="pg4" class="accordion-collapse collapse" data-bs-parent="#faqPG"><div class="accordion-body">For tied values: ROW_NUMBER gives 1,2,3. RANK gives 1,2,2,4 (it leaves a gap). DENSE_RANK gives 1,2,2,3 (no gap).</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#pg5">Find the 2nd highest salary.</button></h2>
+            <div id="pg5" class="accordion-collapse collapse" data-bs-parent="#faqPG"><div class="accordion-body"><code>SELECT DISTINCT salary FROM employees ORDER BY salary DESC LIMIT 1 OFFSET 1;</code> You can also use <code>DENSE_RANK() = 2</code> in a subquery.</div></div></div>
+        </div>
+        <h3><i class="bi bi-pencil-square"></i> Practice exercises</h3>
+        <ol class="steps">
+          <li><b>Design a schema</b>Library system: books, authors (many-to-many), members and loans.</li>
+          <li><b>Write queries</b>Top 5 customers by spend, products never ordered, monthly revenue growth using LAG.</li>
+          <li><b>Optimize</b>Insert 1M rows with <code>generate_series</code>, compare EXPLAIN ANALYZE before and after adding indexes.</li>
+        </ol>
+      </section>
+
+      <section class="note-section" id="cheatsheet" data-level="extra" data-title="Cheat sheet">
+        <h2><span class="sec-icon"><i class="bi bi-journal-code"></i></span>Cheat sheet</h2>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-table"></i> Structure</h6><ul>
+            <li><code>CREATE TABLE</code><span>new table</span></li><li><code>ALTER TABLE … ADD COLUMN</code><span>change</span></li><li><code>REFERENCES t(id)</code><span>foreign key</span></li><li><code>CREATE INDEX</code><span>speed up</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-arrow-repeat"></i> Data</h6><ul>
+            <li><code>INSERT … RETURNING</code><span>create</span></li><li><code>ON CONFLICT DO UPDATE</code><span>upsert</span></li><li><code>UPDATE … WHERE</code><span>update</span></li><li><code>DELETE … WHERE</code><span>delete</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-search"></i> Query</h6><ul>
+            <li><code>JOIN … ON</code><span>combine</span></li><li><code>GROUP BY / HAVING</code><span>aggregate</span></li><li><code>WITH x AS (…)</code><span>CTE</span></li><li><code>OVER (PARTITION BY)</code><span>window</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-speedometer"></i> Ops</h6><ul>
+            <li><code>EXPLAIN ANALYZE</code><span>profile</span></li><li><code>BEGIN / COMMIT</code><span>transaction</span></li><li><code>pg_dump</code><span>backup</span></li><li><code>VACUUM ANALYZE</code><span>maintenance</span></li></ul></div></div>
+        </div>
+      </section>
+
+      <div class="row g-3 pager my-4">
+        <div class="col-md-6"><a href="backend.html"><small><i class="bi bi-arrow-left"></i> Previous</small><b>Backend with Next.js</b></a></div>
+        <div class="col-md-6 text-md-end"><a href="typescript.html"><small>Next <i class="bi bi-arrow-right"></i></small><b>TypeScript</b></a></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<button class="toc-fab d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas"><i class="bi bi-list-ul me-1"></i> Contents</button>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocLabel">
+  <div class="offcanvas-header"><h5 class="offcanvas-title" id="tocLabel">PostgreSQL notes</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
+  <div class="offcanvas-body"><nav class="toc" data-toc style="position:static;max-height:none"></nav></div>
+</div>
+
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

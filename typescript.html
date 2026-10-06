@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TypeScript Notes</title>
+  <meta name="description" content="TypeScript notes from basic to advanced: types, interfaces, generics, utility types, narrowing, mapped and conditional types, and TypeScript with React and Next.js.">
+  <script>try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('fsn-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <style>
+    .type-set { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; }
+    .type-pill { font-family: var(--font-mono); font-size: .85rem; padding: .35rem .8rem; border-radius: 999px; border: 1.5px solid var(--bs-border-color); background: var(--bs-body-bg); }
+    .type-pill.on { border-color: var(--accent); background: var(--soft); color: var(--accent); font-weight: 600; }
+    .type-pill.off { opacity: .35; text-decoration: line-through; }
+  </style>
+</head>
+<body class="page-typescript" data-page="typescript">
+<div id="site-nav"></div>
+
+<header class="hero">
+  <div class="container-xl">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb small mb-3"><li class="breadcrumb-item"><a href="index.html">Home</a></li><li class="breadcrumb-item active">TypeScript</li></ol></nav>
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <div class="hero-icon"><i class="bi bi-braces-asterisk"></i></div>
+      <div><span class="chip"><i class="bi bi-4-circle"></i> Module 4</span></div>
+    </div>
+    <h1>TypeScript</h1>
+    <p class="lead">JavaScript with types. Catch bugs while you type, get better autocomplete, and refactor with confidence. This page goes from <code>string</code> and <code>number</code> to generics, mapped types and conditional types.</p>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <span class="chip"><i class="bi bi-type"></i> Types &amp; interfaces</span>
+      <span class="chip"><i class="bi bi-funnel"></i> Narrowing</span>
+      <span class="chip"><i class="bi bi-box"></i> Generics</span>
+      <span class="chip"><i class="bi bi-tools"></i> Utility types</span>
+      <span class="chip"><i class="bi bi-filetype-tsx"></i> TS + React</span>
+    </div>
+  </div>
+</header>
+
+<div class="container-xl">
+  <div class="row g-4">
+    <aside class="col-lg-3 d-none d-lg-block toc-col"><nav class="toc pt-4" data-toc></nav></aside>
+
+    <main class="col-lg-9 notes">
+
+      <div class="level-banner basic"><i class="bi bi-1-circle-fill"></i><div>Level 1 — Basics<small>Why TypeScript, setup, primitive types, arrays, objects, functions and unions</small></div></div>
+
+      <section class="note-section" id="why-ts" data-level="basic" data-title="Why TypeScript?">
+        <h2><span class="sec-icon"><i class="bi bi-question-diamond"></i></span>Why TypeScript? <span class="lvl basic">Basic</span></h2>
+        <p>TypeScript is a <span class="kw">superset of JavaScript</span>: every JS file is already valid TS. It adds <b>static types</b>, which are checked <b>before</b> your code runs. Browsers can't run TS, so it is <b>compiled</b> to plain JavaScript first.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-gear"></i> How TypeScript works</div>
+          <div class="flow">
+            <div class="node hl"><i class="bi bi-filetype-tsx"></i>app.ts<small>your code + types</small></div>
+            <div class="arrow">tsc / bundler</div>
+            <div class="node"><i class="bi bi-shield-check"></i>Type check<small>errors shown in editor</small></div>
+            <div class="arrow">types erased</div>
+            <div class="node"><i class="bi bi-filetype-js"></i>app.js<small>plain JavaScript</small></div>
+            <div class="arrow">runs in</div>
+            <div class="node ok"><i class="bi bi-browser-chrome"></i>Browser / Node</div>
+          </div>
+          <p class="diagram-caption">Types exist <b>only at compile time</b>. They are completely removed in the output.</p>
+        </div>
+        <div class="code-pair">
+          <div>
+            <div class="lbl bad"><i class="bi bi-bug"></i> JavaScript — bug found by users</div>
+            <script type="text/plain" class="code" data-lang="js">
+              function total(price, qty) {
+                return price * qty;
+              }
+              total("100", 2);   // 200 (lucky)
+              total(100);        // NaN 😱 — no warning
+            </script>
+          </div>
+          <div>
+            <div class="lbl good"><i class="bi bi-shield-check"></i> TypeScript — bug found in editor</div>
+            <script type="text/plain" class="code" data-lang="ts">
+              function total(price: number, qty: number): number {
+                return price * qty;
+              }
+              total("100", 2);   // ❌ Argument of type 'string' is not assignable to 'number'
+              total(100);        // ❌ Expected 2 arguments, but got 1
+            </script>
+          </div>
+        </div>
+        <div class="callout analogy"><i class="bi bi-rulers"></i><div><strong class="t">Think of it like this</strong>Types are like <b>labelled containers</b>: you can't pour juice into the box marked "only screws". A spell-checker for your logic.</div></div>
+      </section>
+
+      <section class="note-section" id="setup" data-level="basic" data-title="Setup">
+        <h2><span class="sec-icon"><i class="bi bi-tools"></i></span>Setup <span class="lvl basic">Basic</span></h2>
+        <script type="text/plain" class="code" data-lang="bash" data-title="terminal">
+          npm install -D typescript
+          npx tsc --init          # creates tsconfig.json
+          npx tsc                 # compile .ts → .js
+          npx tsc --noEmit        # type-check only (common in Next.js projects)
+
+          # run TS directly while learning
+          npx tsx hello.ts
+        </script>
+        <div class="callout tip"><i class="bi bi-lightbulb"></i><div><strong class="t">In Next.js</strong><code>create-next-app</code> sets up TypeScript for you. Rename a file to <code>.ts</code> or <code>.tsx</code> and it just works. Recent Node.js versions can also run <code>.ts</code> files directly by stripping the types.</div></div>
+      </section>
+
+      <section class="note-section" id="basic-types" data-level="basic" data-title="Basic types">
+        <h2><span class="sec-icon"><i class="bi bi-type"></i></span>Basic types &amp; inference <span class="lvl basic">Basic</span></h2>
+        <script type="text/plain" class="code" data-lang="ts">
+          // Explicit annotation:  name: type
+          let username: string = "Asha";
+          let age: number = 24;            // ints and floats are both "number"
+          let isAdmin: boolean = false;
+          let nothing: null = null;
+          let notSet: undefined = undefined;
+          let big: bigint = 100n;
+
+          // Inference — TS figures it out; prefer this when obvious
+          let city = "Pune";               // string
+          const PI = 3.14;                 // literal type 3.14 (const can't change)
+          city = 42;                       // ❌ Type 'number' is not assignable to type 'string'
+        </script>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Type</th><th>Meaning</th><th>Use?</th></tr></thead>
+            <tbody>
+              <tr><td><code>any</code></td><td>Turns type checking <b>off</b></td><td class="no">Avoid. It hides bugs.</td></tr>
+              <tr><td><code>unknown</code></td><td>"Could be anything, so check it before use"</td><td class="yes">Use for untrusted data (JSON, catch errors)</td></tr>
+              <tr><td><code>void</code></td><td>The function returns nothing</td><td>Return type of handlers</td></tr>
+              <tr><td><code>never</code></td><td>A value that can never exist</td><td>Exhaustive checks, functions that always throw</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="any vs unknown">
+          let a: any = JSON.parse(input);
+          a.foo.bar.baz();                  // compiles 😬 → crashes at runtime
+
+          let u: unknown = JSON.parse(input);
+          u.foo;                            // ❌ 'u' is of type 'unknown'
+          if (typeof u === "object" && u !== null && "foo" in u) { /* ✅ safe now */ }
+        </script>
+      </section>
+
+      <section class="note-section" id="arrays-objects" data-level="basic" data-title="Arrays, tuples &amp; objects">
+        <h2><span class="sec-icon"><i class="bi bi-list-ul"></i></span>Arrays, tuples &amp; objects <span class="lvl basic">Basic</span></h2>
+        <script type="text/plain" class="code" data-lang="ts">
+          // Arrays
+          const scores: number[] = [90, 85, 77];
+          const names: Array<string> = ["a", "b"];        // same thing, generic syntax
+          const ids: readonly number[] = [1, 2];          // can't push/pop
+
+          // Tuple: fixed length, fixed type per position
+          const point: [number, number] = [10, 20];
+          const entry: [string, number] = ["age", 24];
+          const [key, value] = entry;                     // destructuring keeps types
+
+          // Objects (inline type)
+          const user: { id: number; name: string; email?: string } = {
+            id: 1,
+            name: "Asha",                                 // email is optional (?)
+          };
+
+          // Index signature: object with unknown keys
+          const stock: { [sku: string]: number } = { A1: 5, B2: 0 };
+          const stock2: Record<string, number> = { A1: 5 };   // same, nicer
+        </script>
+      </section>
+
+      <section class="note-section" id="type-interface" data-level="basic" data-title="Type aliases &amp; interfaces">
+        <h2><span class="sec-icon"><i class="bi bi-card-list"></i></span>Type aliases &amp; interfaces <span class="lvl basic">Basic</span></h2>
+        <p>Give a shape a <b>name</b> so you can reuse it.</p>
+        <div class="code-pair">
+          <div>
+            <script type="text/plain" class="code" data-lang="ts" data-title="type alias">
+              type User = {
+                readonly id: number;   // can't be reassigned
+                name: string;
+                email?: string;
+              };
+
+              type Admin = User & { permissions: string[] };  // intersection
+              type ID = number | string;                       // only "type" can do unions
+            </script>
+          </div>
+          <div>
+            <script type="text/plain" class="code" data-lang="ts" data-title="interface">
+              interface User {
+                readonly id: number;
+                name: string;
+                email?: string;
+              }
+
+              interface Admin extends User {                   // inheritance
+                permissions: string[];
+              }
+              // interfaces with the same name MERGE (declaration merging)
+            </script>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Feature</th><th><code>type</code></th><th><code>interface</code></th></tr></thead>
+            <tbody>
+              <tr><td>Object shapes</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+              <tr><td>Unions / primitives / tuples</td><td class="yes">✓</td><td class="no">✗</td></tr>
+              <tr><td>Extend</td><td><code>&amp;</code></td><td><code>extends</code></td></tr>
+              <tr><td>Declaration merging</td><td class="no">✗</td><td class="yes">✓</td></tr>
+              <tr><td>Mapped / conditional types</td><td class="yes">✓</td><td class="no">✗</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout tip"><i class="bi bi-lightbulb"></i><div><strong class="t">Which one?</strong>Either is fine. Pick one and stay consistent. A common rule is <code>interface</code> for object/class shapes and <code>type</code> for everything else.</div></div>
+      </section>
+
+      <section class="note-section" id="functions" data-level="basic" data-title="Functions">
+        <h2><span class="sec-icon"><i class="bi bi-code-square"></i></span>Functions <span class="lvl basic">Basic</span></h2>
+        <script type="text/plain" class="code" data-lang="ts">
+          // parameters + return type
+          function add(a: number, b: number): number { return a + b; }
+
+          // arrow function
+          const greet = (name: string, greeting = "Hello"): string => `${greeting}, ${name}`;
+
+          // optional & rest parameters
+          function log(msg: string, level?: "info" | "warn", ...tags: string[]): void {}
+
+          // function TYPE
+          type MathOp = (a: number, b: number) => number;
+          const multiply: MathOp = (a, b) => a * b;          // params inferred from MathOp
+
+          // async → returns a Promise
+          async function getUser(id: number): Promise<User> {
+            const res = await fetch(`/api/users/${id}`);
+            return res.json();
+          }
+
+          // overloads: different signatures, one implementation
+          function format(x: number): string;
+          function format(x: Date): string;
+          function format(x: number | Date) {
+            return typeof x === "number" ? x.toFixed(2) : x.toISOString();
+          }
+        </script>
+      </section>
+
+      <section class="note-section" id="unions" data-level="basic" data-title="Union &amp; literal types">
+        <h2><span class="sec-icon"><i class="bi bi-union"></i></span>Union &amp; literal types <span class="lvl basic">Basic</span></h2>
+        <p>A <span class="kw">union</span> (<code>A | B</code>) means "either A or B". A <span class="kw">literal type</span> allows only exact values.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-union"></i> type Status = "idle" | "loading" | "success" | "error"</div>
+          <div class="type-set">
+            <span class="type-pill on">"idle"</span><span class="type-pill on">"loading"</span><span class="type-pill on">"success"</span><span class="type-pill on">"error"</span>
+            <span class="type-pill off">"done"</span><span class="type-pill off">"pending"</span><span class="type-pill off">42</span>
+          </div>
+          <p class="diagram-caption">Only the highlighted values are allowed. Typos like <code>"sucess"</code> are caught right away.</p>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts">
+          type Status = "idle" | "loading" | "success" | "error";
+          type Size = "sm" | "md" | "lg";
+          type ID = string | number;
+
+          let s: Status = "loading";   // ✅
+          s = "sucess";                // ❌ Did you mean "success"?
+
+          function printId(id: ID) {
+            // id.toUpperCase();       ❌ number has no toUpperCase → narrow first (next level)
+          }
+        </script>
+        <h3><i class="bi bi-list-ol"></i> Enums vs union of literals</h3>
+        <div class="code-pair">
+          <div>
+            <script type="text/plain" class="code" data-lang="ts" data-title="enum (generates JS code)">
+              enum Role { User = "USER", Admin = "ADMIN" }
+              const r: Role = Role.Admin;
+            </script>
+          </div>
+          <div>
+            <script type="text/plain" class="code" data-lang="ts" data-title="preferred: as const + union">
+              const ROLES = ["USER", "ADMIN"] as const;
+              type Role = (typeof ROLES)[number];   // "USER" | "ADMIN"
+            </script>
+          </div>
+        </div>
+      </section>
+
+      <div class="level-banner inter"><i class="bi bi-2-circle-fill"></i><div>Level 2 — Intermediate<small>Narrowing, generics, utility types, keyof/typeof and classes</small></div></div>
+
+      <section class="note-section" id="narrowing" data-level="inter" data-title="Narrowing &amp; type guards">
+        <h2><span class="sec-icon"><i class="bi bi-funnel"></i></span>Narrowing &amp; type guards <span class="lvl inter">Intermediate</span></h2>
+        <p><span class="kw">Narrowing</span> is how TS works out a more specific type inside an <code>if</code> block, based on the checks you write.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-signpost-split"></i> Narrowing string | number</div>
+          <div class="flow">
+            <div class="node hl"><i class="bi bi-question-circle"></i>value: string | number</div>
+            <div class="arrow">typeof === "string"</div>
+            <div class="node ok"><i class="bi bi-fonts"></i>string<small>.toUpperCase() ✓</small></div>
+            <div class="arrow">else</div>
+            <div class="node ok"><i class="bi bi-123"></i>number<small>.toFixed() ✓</small></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts">
+          function format(value: string | number) {
+            if (typeof value === "string") return value.toUpperCase();   // string here
+            return value.toFixed(2);                                       // number here
+          }
+
+          // instanceof
+          function when(d: Date | string) { return d instanceof Date ? d.getTime() : Date.parse(d); }
+
+          // "in" operator
+          type Fish = { swim(): void };  type Bird = { fly(): void };
+          function move(a: Fish | Bird) { if ("swim" in a) a.swim(); else a.fly(); }
+
+          // truthiness
+          function hello(name?: string) { if (name) console.log(name.trim()); }
+
+          // custom type guard: "x is Type"
+          function isUser(x: unknown): x is User {
+            return typeof x === "object" && x !== null && "id" in x && "name" in x;
+          }
+          const data: unknown = await res.json();
+          if (isUser(data)) data.name;     // ✅ data is User
+        </script>
+        <h3><i class="bi bi-diagram-3"></i> Discriminated unions (very common!)</h3>
+        <script type="text/plain" class="code" data-lang="ts">
+          type ApiState<T> =
+            | { status: "loading" }
+            | { status: "error"; error: string }
+            | { status: "success"; data: T };
+
+          function render(s: ApiState<User[]>) {
+            switch (s.status) {               // "status" is the discriminant
+              case "loading": return "Loading…";
+              case "error":   return s.error;               // ✅ error exists here
+              case "success": return s.data.length + " users";
+              default: {
+                const _exhaustive: never = s;  // ❌ compile error if a new status is added but not handled
+                return _exhaustive;
+              }
+            }
+          }
+        </script>
+      </section>
+
+      <section class="note-section" id="generics" data-level="inter" data-title="Generics">
+        <h2><span class="sec-icon"><i class="bi bi-box"></i></span>Generics <span class="lvl inter">Intermediate</span></h2>
+        <p><span class="kw">Generics</span> are <b>type parameters</b>. They let one function or type work with many types without losing type information.</p>
+        <div class="callout analogy"><i class="bi bi-box-seam"></i><div><strong class="t">Labelled box</strong><code>Box&lt;T&gt;</code> is a box whose label you fill in later. <code>Box&lt;Shoe&gt;</code> holds shoes and <code>Box&lt;Book&gt;</code> holds books. It's the same box design, and you always know what's inside.</div></div>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-arrow-repeat"></i> T flows from input to output</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-box-arrow-in-right"></i>first([1,2,3])<small>T = number</small></div>
+            <div class="arrow">function first&lt;T&gt;(arr: T[]): T</div>
+            <div class="node ok"><i class="bi bi-box-arrow-right"></i>returns number</div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts">
+          // generic function
+          function first<T>(arr: T[]): T | undefined {
+            return arr[0];
+          }
+          const n = first([1, 2, 3]);        // number | undefined
+          const s = first(["a", "b"]);       // string | undefined
+
+          // generic type
+          type ApiResponse<T> = { data: T; error: string | null };
+          const res: ApiResponse<User[]> = { data: [], error: null };
+
+          // constraints: T must have an id
+          function findById<T extends { id: number }>(items: T[], id: number): T | undefined {
+            return items.find((i) => i.id === id);
+          }
+
+          // multiple params + keyof constraint
+          function getProp<T, K extends keyof T>(obj: T, key: K): T[K] {
+            return obj[key];
+          }
+          getProp({ name: "Asha", age: 24 }, "age");    // number
+          getProp({ name: "Asha" }, "email");           // ❌ "email" is not a key
+
+          // default type parameter
+          type Paginated<T = unknown> = { items: T[]; total: number };
+
+          // generic fetch helper
+          async function api<T>(url: string): Promise<T> {
+            const r = await fetch(url);
+            if (!r.ok) throw new Error(r.statusText);
+            return r.json() as Promise<T>;
+          }
+          const products = await api<Product[]>("/api/products");
+        </script>
+      </section>
+
+      <section class="note-section" id="utility-types" data-level="inter" data-title="Utility types">
+        <h2><span class="sec-icon"><i class="bi bi-tools"></i></span>Utility types <span class="lvl inter">Intermediate</span></h2>
+        <p>Built-in helpers that <b>transform</b> existing types, so you don't have to rewrite them.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-magic"></i> Starting from User { id; name; email; password }</div>
+          <div class="row g-2">
+            <div class="col-md-6"><div class="n-card"><h5><code>Partial&lt;User&gt;</code></h5><p>all fields optional → great for PATCH updates</p></div></div>
+            <div class="col-md-6"><div class="n-card"><h5><code>Required&lt;User&gt;</code></h5><p>all fields required</p></div></div>
+            <div class="col-md-6"><div class="n-card"><h5><code>Pick&lt;User, "id" | "name"&gt;</code></h5><p>only id, name</p></div></div>
+            <div class="col-md-6"><div class="n-card"><h5><code>Omit&lt;User, "password"&gt;</code></h5><p>everything except password → safe public user</p></div></div>
+            <div class="col-md-6"><div class="n-card"><h5><code>Readonly&lt;User&gt;</code></h5><p>no field can be reassigned</p></div></div>
+            <div class="col-md-6"><div class="n-card"><h5><code>Record&lt;K, V&gt;</code></h5><p>object with keys K and values V</p></div></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts">
+          interface User { id: number; name: string; email: string; password: string }
+
+          type PublicUser   = Omit<User, "password">;
+          type UserPreview  = Pick<User, "id" | "name">;
+          type UpdateUser   = Partial<Omit<User, "id">>;          // combine them!
+          type RolesMap     = Record<"admin" | "user", string[]>;
+
+          type T1 = Exclude<"a" | "b" | "c", "a">;                 // "b" | "c"
+          type T2 = Extract<"a" | "b" | 1, string>;                // "a" | "b"
+          type T3 = NonNullable<string | null | undefined>;        // string
+
+          function createUser(name: string, age: number) { return { id: 1, name, age }; }
+          type NewUser  = ReturnType<typeof createUser>;           // { id: number; name: string; age: number }
+          type Args     = Parameters<typeof createUser>;           // [string, number]
+          type Resolved = Awaited<Promise<User[]>>;                // User[]
+        </script>
+      </section>
+
+      <section class="note-section" id="keyof-typeof" data-level="inter" data-title="keyof, typeof &amp; indexed types">
+        <h2><span class="sec-icon"><i class="bi bi-key"></i></span>keyof, typeof &amp; indexed access <span class="lvl inter">Intermediate</span></h2>
+        <script type="text/plain" class="code" data-lang="ts">
+          type User = { id: number; name: string; tags: string[] };
+
+          type UserKeys = keyof User;                 // "id" | "name" | "tags"
+          type NameType = User["name"];               // string           (indexed access)
+          type Tag      = User["tags"][number];       // string           (array element)
+
+          // typeof: get a TYPE from a VALUE
+          const config = { apiUrl: "/api", retries: 3 };
+          type Config = typeof config;                // { apiUrl: string; retries: number }
+
+          // as const: freeze to literal types
+          const COLORS = { primary: "#6366f1", danger: "#dc2626" } as const;
+          type ColorName  = keyof typeof COLORS;                 // "primary" | "danger"
+          type ColorValue = (typeof COLORS)[ColorName];          // "#6366f1" | "#dc2626"
+
+          // satisfies: check the shape WITHOUT widening the type
+          const routes = {
+            home: "/",
+            blog: "/blog",
+          } satisfies Record<string, `/${string}`>;
+          routes.home;                                // type is "/" (kept precise)
+        </script>
+      </section>
+
+      <section class="note-section" id="classes" data-level="inter" data-title="Classes">
+        <h2><span class="sec-icon"><i class="bi bi-boxes"></i></span>Classes <span class="lvl inter">Intermediate</span></h2>
+        <script type="text/plain" class="code" data-lang="ts">
+          interface Repository<T> {
+            findAll(): Promise<T[]>;
+            findById(id: number): Promise<T | null>;
+          }
+
+          abstract class BaseRepo<T> implements Repository<T> {
+            constructor(protected readonly table: string) {}      // parameter property
+            abstract findAll(): Promise<T[]>;
+            async findById(id: number): Promise<T | null> {
+              const rows = await query<T>(`SELECT * FROM ${this.table} WHERE id = $1`, [id]);
+              return rows[0] ?? null;
+            }
+          }
+
+          class UserRepo extends BaseRepo<User> {
+            #cache = new Map<number, User>();                     // truly private (JS #)
+            private static instance?: UserRepo;
+
+            static get() { return (this.instance ??= new UserRepo("users")); }  // singleton
+            async findAll() { return query<User>("SELECT * FROM users"); }
+          }
+        </script>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Modifier</th><th>Accessible from</th></tr></thead>
+            <tbody>
+              <tr><td><code>public</code> (default)</td><td>Anywhere</td></tr>
+              <tr><td><code>protected</code></td><td>The class and its subclasses</td></tr>
+              <tr><td><code>private</code> / <code>#field</code></td><td>Only the class (<code>#</code> is also enforced at runtime)</td></tr>
+              <tr><td><code>readonly</code></td><td>Set once in the constructor</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="level-banner adv"><i class="bi bi-3-circle-fill"></i><div>Level 3 — Advanced<small>Mapped types, conditional types, infer, template literals, declaration files, tsconfig and TS with React</small></div></div>
+
+      <section class="note-section" id="mapped" data-level="adv" data-title="Mapped types">
+        <h2><span class="sec-icon"><i class="bi bi-arrow-left-right"></i></span>Mapped types <span class="lvl adv">Advanced</span></h2>
+        <p>A <span class="kw">mapped type</span> loops over the keys of a type and builds a new one. This is how <code>Partial</code> and <code>Readonly</code> are built.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-arrow-repeat"></i> { [K in keyof T]: … }</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-card-list"></i>{ name: string; age: number }</div>
+            <div class="arrow">for each key K</div>
+            <div class="node hl"><i class="bi bi-gear"></i>K → () =&gt; T[K]</div>
+            <div class="arrow">result</div>
+            <div class="node ok"><i class="bi bi-card-checklist"></i>{ getName(): string; getAge(): number }</div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts">
+          // re-implement built-ins
+          type MyPartial<T>  = { [K in keyof T]?: T[K] };
+          type MyReadonly<T> = { readonly [K in keyof T]: T[K] };
+          type Mutable<T>    = { -readonly [K in keyof T]: T[K] };   // remove modifier with -
+          type Nullable<T>   = { [K in keyof T]: T[K] | null };
+
+          // key remapping with "as" + template literals
+          type Getters<T> = {
+            [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K];
+          };
+          type PersonGetters = Getters<{ name: string; age: number }>;
+          // { getName: () => string; getAge: () => number }
+
+          // filter keys: keep only function properties
+          type FunctionKeys<T> = { [K in keyof T]: T[K] extends Function ? K : never }[keyof T];
+        </script>
+      </section>
+
+      <section class="note-section" id="conditional" data-level="adv" data-title="Conditional types &amp; infer">
+        <h2><span class="sec-icon"><i class="bi bi-signpost-2"></i></span>Conditional types &amp; <code>infer</code> <span class="lvl adv">Advanced</span></h2>
+        <p>The syntax is <code>T extends U ? X : Y</code>, which works like a ternary operator for types. With <code>infer</code> you can pull a type out of another type.</p>
+        <script type="text/plain" class="code" data-lang="ts">
+          type IsString<T> = T extends string ? true : false;
+          type A = IsString<"hi">;     // true
+          type B = IsString<42>;       // false
+
+          // distributive over unions
+          type ToArray<T> = T extends any ? T[] : never;
+          type C = ToArray<string | number>;   // string[] | number[]
+
+          // infer: extract types
+          type ElementOf<T>   = T extends (infer E)[] ? E : never;
+          type UnwrapPromise<T> = T extends Promise<infer V> ? V : T;
+          type MyReturnType<F> = F extends (...args: any[]) => infer R ? R : never;
+
+          type D = ElementOf<User[]>;                 // User
+          type E = UnwrapPromise<Promise<number>>;    // number
+
+          // practical: props of any React component
+          type PropsOf<C> = C extends React.ComponentType<infer P> ? P : never;
+        </script>
+      </section>
+
+      <section class="note-section" id="template-literal" data-level="adv" data-title="Template literal types">
+        <h2><span class="sec-icon"><i class="bi bi-chat-quote"></i></span>Template literal types <span class="lvl adv">Advanced</span></h2>
+        <script type="text/plain" class="code" data-lang="ts">
+          type Size = "sm" | "md" | "lg";
+          type Color = "primary" | "danger";
+          type ButtonClass = `btn-${Color}-${Size}`;
+          // "btn-primary-sm" | "btn-primary-md" | ... (6 combos)
+
+          type EventName<T extends string> = `on${Capitalize<T>}`;
+          type ClickHandler = EventName<"click">;     // "onClick"
+
+          type HttpMethod = "GET" | "POST";
+          type Endpoint = `${HttpMethod} /api/${string}`;
+          const e: Endpoint = "GET /api/users";       // ✅
+          const f: Endpoint = "PUT /api/users";       // ❌
+
+          // Built-in string helpers: Uppercase, Lowercase, Capitalize, Uncapitalize
+        </script>
+      </section>
+
+      <section class="note-section" id="modules" data-level="adv" data-title="Modules &amp; declaration files">
+        <h2><span class="sec-icon"><i class="bi bi-file-earmark-code"></i></span>Modules &amp; declaration files <span class="lvl adv">Advanced</span></h2>
+        <script type="text/plain" class="code" data-lang="ts" data-title="types/index.ts — share types">
+          export type Product = { id: number; name: string; price: number };
+          export interface CartItem { product: Product; qty: number }
+
+          // elsewhere — "import type" is erased completely at build
+          import type { Product, CartItem } from "@/types";
+        </script>
+        <script type="text/plain" class="code" data-lang="ts" data-title="types/global.d.ts — describe things without code">
+          // a JS library without types
+          declare module "old-lib" {
+            export function doThing(x: string): number;
+          }
+
+          // extend environment variables typing
+          declare global {
+            namespace NodeJS {
+              interface ProcessEnv {
+                DATABASE_URL: string;
+                JWT_SECRET: string;
+              }
+            }
+          }
+          export {};
+        </script>
+        <div class="callout info"><i class="bi bi-info-circle"></i><div><strong class="t">@types packages</strong>Many libraries ship with their own types. For those that don't, install community types: <code>npm i -D @types/pg</code>. They come from the DefinitelyTyped project.</div></div>
+      </section>
+
+      <section class="note-section" id="tsconfig" data-level="adv" data-title="tsconfig essentials">
+        <h2><span class="sec-icon"><i class="bi bi-gear"></i></span>tsconfig.json essentials <span class="lvl adv">Advanced</span></h2>
+        <script type="text/plain" class="code" data-lang="json" data-title="tsconfig.json (typical Next.js)">
+          {
+            "compilerOptions": {
+              "target": "ES2022",
+              "lib": ["dom", "dom.iterable", "esnext"],
+              "strict": true,                       // ⭐ turn on ALL strict checks
+              "noUncheckedIndexedAccess": true,     // arr[0] is T | undefined
+              "noEmit": true,                       // Next.js compiles, tsc only type-checks
+              "module": "esnext",
+              "moduleResolution": "bundler",
+              "jsx": "preserve",
+              "esModuleInterop": true,
+              "skipLibCheck": true,
+              "isolatedModules": true,
+              "incremental": true,
+              "paths": { "@/*": ["./src/*"] },      // import from "@/lib/db"
+              "plugins": [{ "name": "next" }]
+            },
+            "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+            "exclude": ["node_modules"]
+          }
+        </script>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th><code>strict</code> enables…</th><th>Catches</th></tr></thead>
+            <tbody>
+              <tr><td><code>strictNullChecks</code></td><td>Using a value that may be <code>null</code>/<code>undefined</code></td></tr>
+              <tr><td><code>noImplicitAny</code></td><td>Parameters with no type</td></tr>
+              <tr><td><code>strictFunctionTypes</code></td><td>Unsafe function assignments</td></tr>
+              <tr><td><code>strictPropertyInitialization</code></td><td>Class fields never set</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="note-section" id="ts-react" data-level="adv" data-title="TypeScript with React &amp; Next.js">
+        <h2><span class="sec-icon"><i class="bi bi-filetype-tsx"></i></span>TypeScript with React &amp; Next.js <span class="lvl adv">Advanced</span></h2>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="Props, children, events, state, refs">
+          import { useState, useRef, type ReactNode, type ComponentProps } from "react";
+
+          // Props + children
+          type CardProps = { title: string; children: ReactNode; variant?: "light" | "dark" };
+          export function Card({ title, children, variant = "light" }: CardProps) {
+            return <div className={`card text-bg-${variant}`}><div className="card-body"><h5>{title}</h5>{children}</div></div>;
+          }
+
+          // Extend native element props (all <button> attributes + our own)
+          type ButtonProps = ComponentProps<"button"> & { loading?: boolean };
+          export function Button({ loading, children, ...rest }: ButtonProps) {
+            return <button className="btn btn-primary" disabled={loading} {...rest}>{children}</button>;
+          }
+
+          // State with union / null
+          const [user, setUser] = useState<User | null>(null);
+          const [items, setItems] = useState<Product[]>([]);
+
+          // Refs
+          const inputRef = useRef<HTMLInputElement>(null);
+
+          // Events
+          const onChange = (e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value);
+          const onSubmit = (e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); };
+
+          // Generic component
+          type ListProps<T> = { items: T[]; render: (item: T) => ReactNode; keyOf: (item: T) => string | number };
+          export function List<T>({ items, render, keyOf }: ListProps<T>) {
+            return <ul className="list-group">{items.map((i) => <li key={keyOf(i)} className="list-group-item">{render(i)}</li>)}</ul>;
+          }
+        </script>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="Next.js page / layout / route types">
+          // app/blog/[slug]/page.tsx
+          type PageProps = {
+            params: Promise<{ slug: string }>;
+            searchParams: Promise<Record<string, string | string[] | undefined>>;
+          };
+          export default async function Page({ params }: PageProps) { const { slug } = await params; /* … */ }
+
+          // app/layout.tsx
+          export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) { /* … */ }
+
+          // app/api/items/[id]/route.ts
+          export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) { /* … */ }
+        </script>
+        <div class="callout tip"><i class="bi bi-lightbulb"></i><div><strong class="t">Share types end-to-end</strong>Define a Zod schema once and use <code>z.infer</code>. The same type then covers the form (frontend), the validation (backend) and the DB insert. One source of truth.</div></div>
+      </section>
+
+      <div class="level-banner basic" style="--lvl-basic:#8b5cf6"><i class="bi bi-star-fill" style="color:#8b5cf6"></i><div>Practice &amp; Review<small>Quiz, interview questions and a cheat sheet</small></div></div>
+
+      <section class="note-section" id="interview" data-level="extra" data-title="Interview questions">
+        <h2><span class="sec-icon"><i class="bi bi-chat-square-quote"></i></span>Interview questions</h2>
+        <div class="quiz" data-answer="b" data-explain="unknown forces you to narrow before use; any disables checking.">
+          <p class="q">Which type should you give to <code>JSON.parse()</code> results from an API?</p>
+          <button data-opt="a">any</button>
+          <button data-opt="b">unknown (then validate / narrow)</button>
+          <button data-opt="c">never</button>
+        </div>
+        <div class="quiz" data-answer="c" data-explain="Omit removes listed keys and keeps the rest.">
+          <p class="q">You want a User type without the password field. Use…</p>
+          <button data-opt="a">Partial&lt;User&gt;</button>
+          <button data-opt="b">Pick&lt;User, "password"&gt;</button>
+          <button data-opt="c">Omit&lt;User, "password"&gt;</button>
+        </div>
+        <div class="accordion accordion-notes" id="faqTS">
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#ts1">type vs interface?</button></h2>
+            <div id="ts1" class="accordion-collapse collapse" data-bs-parent="#faqTS"><div class="accordion-body">Both describe object shapes. <code>type</code> can also express unions, tuples, primitives, mapped types and conditional types. <code>interface</code> supports declaration merging and <code>extends</code>. Choose one and be consistent.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#ts2">What are generics, and why use them?</button></h2>
+            <div id="ts2" class="accordion-collapse collapse" data-bs-parent="#faqTS"><div class="accordion-body">Generics are type parameters. You write one function or type that works with many types and keeps the relationship between input and output types, for example <code>first&lt;T&gt;(arr: T[]): T</code>.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#ts3">What does "satisfies" do?</button></h2>
+            <div id="ts3" class="accordion-collapse collapse" data-bs-parent="#faqTS"><div class="accordion-body">It checks that a value matches a type <i>without</i> changing the value's inferred type. You get validation and still keep the precise literal types.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#ts4">Does TypeScript check types at runtime?</button></h2>
+            <div id="ts4" class="accordion-collapse collapse" data-bs-parent="#faqTS"><div class="accordion-body">No. Types are erased at compile time. Data from outside your program (API responses, form input) needs runtime validation with something like Zod.</div></div></div>
+        </div>
+      </section>
+
+      <section class="note-section" id="cheatsheet" data-level="extra" data-title="Cheat sheet">
+        <h2><span class="sec-icon"><i class="bi bi-journal-code"></i></span>Cheat sheet</h2>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-type"></i> Basics</h6><ul>
+            <li><code>x: string</code><span>annotate</span></li><li><code>a?: T</code><span>optional</span></li><li><code>A | B</code><span>union</span></li><li><code>A &amp; B</code><span>intersection</span></li><li><code>T[]</code> / <code>[A, B]</code><span>array / tuple</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-tools"></i> Utilities</h6><ul>
+            <li><code>Partial / Required</code><span>optional-ness</span></li><li><code>Pick / Omit</code><span>select keys</span></li><li><code>Record&lt;K,V&gt;</code><span>map</span></li><li><code>ReturnType / Awaited</code><span>extract</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-key"></i> Operators</h6><ul>
+            <li><code>keyof T</code><span>keys union</span></li><li><code>typeof x</code><span>type of value</span></li><li><code>T[K]</code><span>indexed</span></li><li><code>as const</code><span>literal</span></li><li><code>satisfies</code><span>check only</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-cpu"></i> Advanced</h6><ul>
+            <li><code>&lt;T extends X&gt;</code><span>constraint</span></li><li><code>[K in keyof T]</code><span>mapped</span></li><li><code>T extends U ? X : Y</code><span>conditional</span></li><li><code>infer R</code><span>extract</span></li><li><code>x is T</code><span>type guard</span></li></ul></div></div>
+        </div>
+      </section>
+
+      <div class="row g-3 pager my-4">
+        <div class="col-md-6"><a href="postgresql.html"><small><i class="bi bi-arrow-left"></i> Previous</small><b>PostgreSQL</b></a></div>
+        <div class="col-md-6 text-md-end"><a href="react.html"><small>Next <i class="bi bi-arrow-right"></i></small><b>React: Context API &amp; Redux</b></a></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<button class="toc-fab d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas"><i class="bi bi-list-ul me-1"></i> Contents</button>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocLabel">
+  <div class="offcanvas-header"><h5 class="offcanvas-title" id="tocLabel">TypeScript notes</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
+  <div class="offcanvas-body"><nav class="toc" data-toc style="position:static;max-height:none"></nav></div>
+</div>
+
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

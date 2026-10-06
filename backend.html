@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Next.js Backend Notes</title>
+  <meta name="description" content="Backend with Next.js and PostgreSQL: route handlers, server actions, pg, Prisma, validation, auth, transactions and security.">
+  <script>try{document.documentElement.setAttribute('data-bs-theme',localStorage.getItem('fsn-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'))}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body class="page-backend" data-page="backend">
+<div id="site-nav"></div>
+
+<header class="hero">
+  <div class="container-xl">
+    <nav aria-label="breadcrumb"><ol class="breadcrumb small mb-3"><li class="breadcrumb-item"><a href="index.html">Home</a></li><li class="breadcrumb-item active">Backend</li></ol></nav>
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <div class="hero-icon"><i class="bi bi-hdd-stack"></i></div>
+      <div><span class="chip"><i class="bi bi-2-circle"></i> Module 2</span></div>
+    </div>
+    <h1>Backend with Next.js + PostgreSQL</h1>
+    <p class="lead">Build real APIs inside your Next.js app. You'll start with your first route handler, then connect to PostgreSQL and build CRUD, add validation and authentication, and finish with transactions, security and production architecture.</p>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <span class="chip"><i class="bi bi-plug"></i> Route Handlers</span>
+      <span class="chip"><i class="bi bi-lightning"></i> Server Actions</span>
+      <span class="chip"><i class="bi bi-database"></i> pg + Prisma</span>
+      <span class="chip"><i class="bi bi-shield-lock"></i> Auth &amp; security</span>
+    </div>
+  </div>
+</header>
+
+<div class="container-xl">
+  <div class="row g-4">
+    <aside class="col-lg-3 d-none d-lg-block toc-col"><nav class="toc pt-4" data-toc></nav></aside>
+
+    <main class="col-lg-9 notes">
+
+      <div class="level-banner basic"><i class="bi bi-1-circle-fill"></i><div>Level 1 — Basics<small>What a backend does, route handlers, requests &amp; responses, and connecting to PostgreSQL</small></div></div>
+
+      <section class="note-section" id="backend-intro" data-level="basic" data-title="What is a backend?">
+        <h2><span class="sec-icon"><i class="bi bi-diagram-3"></i></span>What is a backend? <span class="lvl basic">Basic</span></h2>
+        <p>The <span class="kw">frontend</span> is what users see. The <span class="kw">backend</span> is the part they don't see. It receives requests, applies business rules, talks to the <span class="kw">database</span> and sends back responses.</p>
+        <div class="callout analogy"><i class="bi bi-shop"></i><div><strong class="t">Restaurant analogy</strong>The <b>customer</b> (browser) orders from the <b>waiter</b> (API). The waiter takes the order to the <b>kitchen</b> (backend logic), which takes ingredients from the <b>storeroom</b> (PostgreSQL). The customer never walks into the kitchen.</div></div>
+
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-diagram-3"></i> Full-stack architecture in one Next.js app</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-laptop"></i>Browser<small>React UI</small></div>
+            <div class="arrow both">fetch / form</div>
+            <div class="node hl"><i class="bi bi-hdd-network"></i>Next.js server<small>Route Handlers · Server Actions · Server Components</small></div>
+            <div class="arrow both">SQL queries</div>
+            <div class="node alt"><i class="bi bi-database"></i>PostgreSQL<small>tables, rows</small></div>
+          </div>
+          <p class="diagram-caption">Your frontend and backend live in the <b>same project</b> and are deployed together.</p>
+        </div>
+
+        <h3><i class="bi bi-signpost-2"></i> Three ways to run server code in Next.js</h3>
+        <div class="row g-3">
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-file-earmark-richtext"></i></div><h5>Server Components</h5><p>Read data directly while rendering a page. Best for <b>GET</b>-style reads.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-lightning"></i></div><h5>Server Actions</h5><p>Functions marked <code>"use server"</code>. Best for <b>mutations</b> from your own forms.</p></div></div>
+          <div class="col-md-4"><div class="n-card"><div class="ic"><i class="bi bi-plug"></i></div><h5>Route Handlers</h5><p><code>app/api/**/route.ts</code>. A real REST API for mobile apps, webhooks and third parties.</p></div></div>
+        </div>
+      </section>
+
+      <section class="note-section" id="http-basics" data-level="basic" data-title="HTTP &amp; REST basics">
+        <h2><span class="sec-icon"><i class="bi bi-arrow-left-right"></i></span>HTTP &amp; REST basics <span class="lvl basic">Basic</span></h2>
+        <p>Every API call is an <b>HTTP request</b> made of a <span class="kw">method</span>, a <span class="kw">URL</span>, <span class="kw">headers</span> and an optional <span class="kw">body</span>. The server answers with a <span class="kw">status code</span>, headers and a body (usually JSON).</p>
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="table-responsive m-0">
+              <table class="table table-notes mb-0">
+                <thead><tr><th>Method</th><th>Meaning</th><th>Example</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="badge text-bg-success">GET</span></td><td>Read</td><td><code>GET /api/products</code></td></tr>
+                  <tr><td><span class="badge text-bg-primary">POST</span></td><td>Create</td><td><code>POST /api/products</code></td></tr>
+                  <tr><td><span class="badge text-bg-warning">PUT/PATCH</span></td><td>Update (full/partial)</td><td><code>PATCH /api/products/7</code></td></tr>
+                  <tr><td><span class="badge text-bg-danger">DELETE</span></td><td>Delete</td><td><code>DELETE /api/products/7</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="table-responsive m-0">
+              <table class="table table-notes mb-0">
+                <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+                <tbody>
+                  <tr><td><code>200</code> / <code>201</code></td><td>OK / Created <i class="bi bi-emoji-smile yes"></i></td></tr>
+                  <tr><td><code>204</code></td><td>No content (deleted)</td></tr>
+                  <tr><td><code>400</code> / <code>422</code></td><td>Bad input / validation failed</td></tr>
+                  <tr><td><code>401</code> / <code>403</code></td><td>Not logged in / not allowed</td></tr>
+                  <tr><td><code>404</code> / <code>409</code></td><td>Not found / conflict (duplicate)</td></tr>
+                  <tr><td><code>500</code></td><td>Server bug <i class="bi bi-emoji-frown no"></i></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="note-section" id="route-handlers" data-level="basic" data-title="Route Handlers">
+        <h2><span class="sec-icon"><i class="bi bi-plug"></i></span>Route Handlers (API routes) <span class="lvl basic">Basic</span></h2>
+        <p>Create a <code>route.ts</code> file inside <code>app/</code> and export functions named after HTTP methods.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-signpost"></i> URL → file → function</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-link-45deg"></i>GET /api/hello</div>
+            <div class="arrow">maps to</div>
+            <div class="node hl"><i class="bi bi-filetype-ts"></i>app/api/hello/route.ts</div>
+            <div class="arrow">calls</div>
+            <div class="node ok"><i class="bi bi-braces"></i>export function GET()</div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="app/api/hello/route.ts">
+          import { NextResponse } from "next/server";
+
+          // GET /api/hello
+          export async function GET() {
+            return NextResponse.json({ message: "Hello from the backend 👋" });
+          }
+
+          // POST /api/hello
+          export async function POST(request: Request) {
+            const body = await request.json();          // { name: "Asha" }
+            return NextResponse.json({ greeting: `Hi ${body.name}` }, { status: 201 });
+          }
+        </script>
+        <script type="text/plain" class="code" data-lang="bash" data-title="Test it from the terminal">
+          curl http://localhost:3000/api/hello
+          curl -X POST http://localhost:3000/api/hello -H "Content-Type: application/json" -d '{"name":"Asha"}'
+        </script>
+        <div class="callout warn"><i class="bi bi-exclamation-triangle"></i><div><strong class="t">Don't mix them up</strong>You can't put <code>route.ts</code> and <code>page.tsx</code> in the <b>same folder</b>. Keep APIs under <code>app/api/</code>.</div></div>
+      </section>
+
+      <section class="note-section" id="request-response" data-level="basic" data-title="Reading requests">
+        <h2><span class="sec-icon"><i class="bi bi-envelope-open"></i></span>Reading requests &amp; sending responses <span class="lvl basic">Basic</span></h2>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-envelope"></i> Anatomy of a request</div>
+          <div class="stack">
+            <div class="layer" style="--lc:#10b981"><i class="bi bi-signpost"></i><div><b>Method + URL</b><small>PATCH /api/products/7?notify=true</small></div></div>
+            <div class="layer" style="--lc:#0ea5e9"><i class="bi bi-braces"></i><div><b>Dynamic params</b><small>{ id: "7" } ← from the [id] folder</small></div></div>
+            <div class="layer" style="--lc:#8b5cf6"><i class="bi bi-question-circle"></i><div><b>Search params</b><small>notify=true</small></div></div>
+            <div class="layer" style="--lc:#f59e0b"><i class="bi bi-card-heading"></i><div><b>Headers + cookies</b><small>Authorization, Content-Type, session cookie</small></div></div>
+            <div class="layer" style="--lc:#ef4444"><i class="bi bi-file-earmark-text"></i><div><b>Body</b><small>{ "price": 999 }</small></div></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="app/api/products/[id]/route.ts">
+          import { NextRequest, NextResponse } from "next/server";
+          import { cookies, headers } from "next/headers";
+
+          type Ctx = { params: Promise<{ id: string }> };     // params is a Promise (Next.js 15+)
+
+          export async function PATCH(req: NextRequest, { params }: Ctx) {
+            const { id } = await params;                           // "7"
+            const notify = req.nextUrl.searchParams.get("notify"); // "true"
+            const body = await req.json();                         // { price: 999 }
+            const auth = (await headers()).get("authorization");
+            const session = (await cookies()).get("session")?.value;
+
+            return NextResponse.json({ id, notify, body, hasAuth: !!auth, hasSession: !!session });
+          }
+        </script>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Need</th><th>Code</th></tr></thead>
+            <tbody>
+              <tr><td>JSON body</td><td><code>await req.json()</code></td></tr>
+              <tr><td>Form body</td><td><code>await req.formData()</code></td></tr>
+              <tr><td>Query string</td><td><code>req.nextUrl.searchParams.get("q")</code></td></tr>
+              <tr><td>JSON response + status</td><td><code>NextResponse.json(data, { status: 201 })</code></td></tr>
+              <tr><td>Empty response</td><td><code>new Response(null, { status: 204 })</code></td></tr>
+              <tr><td>Redirect</td><td><code>NextResponse.redirect(new URL("/login", req.url))</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="note-section" id="connect-pg" data-level="basic" data-title="Connect to PostgreSQL">
+        <h2><span class="sec-icon"><i class="bi bi-database-check"></i></span>Connecting to PostgreSQL <span class="lvl basic">Basic</span></h2>
+        <p>We'll use <code>pg</code> (node-postgres), the standard PostgreSQL driver for Node.js. If you haven't set up a database yet, start with the <a href="postgresql.html">PostgreSQL notes</a>.</p>
+        <ol class="steps">
+          <li><b>Install the driver</b><code>npm install pg</code> and <code>npm install -D @types/pg</code></li>
+          <li><b>Add the connection string</b>Put it in <code>.env.local</code>.</li>
+          <li><b>Create one shared connection pool</b>Create it once in <code>lib/db.ts</code> and import it everywhere.</li>
+        </ol>
+        <script type="text/plain" class="code" data-lang="env" data-title=".env.local">
+          # postgres://USER:PASSWORD@HOST:PORT/DATABASE
+          DATABASE_URL=postgres://postgres:secret@localhost:5432/shop
+        </script>
+
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-diagram-2"></i> Why a connection pool?</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-people"></i>Many requests</div>
+            <div class="arrow">borrow</div>
+            <div class="node hl"><i class="bi bi-collection"></i>Pool<small>e.g. 10 open connections, reused</small></div>
+            <div class="arrow both">queries</div>
+            <div class="node alt"><i class="bi bi-database"></i>PostgreSQL</div>
+          </div>
+          <p class="diagram-caption">Opening a new connection for every query is slow, and Postgres limits how many connections it accepts. A pool keeps a few open and shares them.</p>
+        </div>
+
+        <script type="text/plain" class="code" data-lang="ts" data-title="lib/db.ts">
+          import { Pool } from "pg";
+
+          // In dev, hot-reload re-runs this file → reuse one pool via globalThis
+          const globalForDb = globalThis as unknown as { pgPool?: Pool };
+
+          export const db =
+            globalForDb.pgPool ??
+            new Pool({
+              connectionString: process.env.DATABASE_URL,
+              max: 10,                          // max connections in the pool
+              ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+            });
+
+          if (process.env.NODE_ENV !== "production") globalForDb.pgPool = db;
+
+          // Small typed helper
+          export async function query<T>(text: string, params: unknown[] = []): Promise<T[]> {
+            const { rows } = await db.query(text, params);
+            return rows as T[];
+          }
+        </script>
+        <script type="text/plain" class="code" data-lang="ts" data-title="app/api/health/route.ts">
+          import { NextResponse } from "next/server";
+          import { query } from "@/lib/db";
+
+          export async function GET() {
+            const [row] = await query<{ now: string }>("SELECT NOW() AS now");
+            return NextResponse.json({ db: "connected", time: row.now });
+          }
+        </script>
+        <div class="callout danger"><i class="bi bi-shield-lock"></i><div><strong class="t">Server-only</strong>Only import <code>lib/db.ts</code> from server code: Route Handlers, Server Actions and Server Components. Add <code>import "server-only";</code> at the top, and the build will fail if a Client Component imports it by mistake.</div></div>
+      </section>
+
+      <div class="level-banner inter"><i class="bi bi-2-circle-fill"></i><div>Level 2 — Intermediate<small>CRUD API, SQL injection, validation, Server Actions, ORMs and error handling</small></div></div>
+
+      <section class="note-section" id="crud" data-level="inter" data-title="Build a CRUD API">
+        <h2><span class="sec-icon"><i class="bi bi-arrow-repeat"></i></span>Build a full CRUD API <span class="lvl inter">Intermediate</span></h2>
+        <p><b>CRUD</b> = <b>C</b>reate, <b>R</b>ead, <b>U</b>pdate, <b>D</b>elete. Here's a complete products API.</p>
+        <script type="text/plain" class="code" data-lang="sql" data-title="schema.sql (run once in psql)">
+          CREATE TABLE products (
+            id          SERIAL PRIMARY KEY,
+            name        VARCHAR(120)   NOT NULL,
+            price       NUMERIC(10,2)  NOT NULL CHECK (price >= 0),
+            stock       INT            NOT NULL DEFAULT 0,
+            created_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW()
+          );
+        </script>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Endpoint</th><th>File</th><th>SQL</th></tr></thead>
+            <tbody>
+              <tr><td><span class="badge text-bg-success">GET</span> /api/products</td><td>api/products/route.ts</td><td><code>SELECT</code></td></tr>
+              <tr><td><span class="badge text-bg-primary">POST</span> /api/products</td><td>api/products/route.ts</td><td><code>INSERT … RETURNING *</code></td></tr>
+              <tr><td><span class="badge text-bg-success">GET</span> /api/products/:id</td><td>api/products/[id]/route.ts</td><td><code>SELECT … WHERE id=$1</code></td></tr>
+              <tr><td><span class="badge text-bg-warning">PATCH</span> /api/products/:id</td><td>api/products/[id]/route.ts</td><td><code>UPDATE … RETURNING *</code></td></tr>
+              <tr><td><span class="badge text-bg-danger">DELETE</span> /api/products/:id</td><td>api/products/[id]/route.ts</td><td><code>DELETE</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="app/api/products/route.ts">
+          import { NextRequest, NextResponse } from "next/server";
+          import { query } from "@/lib/db";
+
+          export type Product = { id: number; name: string; price: string; stock: number; created_at: string };
+
+          // READ all  (with optional search)  GET /api/products?q=key
+          export async function GET(req: NextRequest) {
+            const q = req.nextUrl.searchParams.get("q");
+            const products = q
+              ? await query<Product>("SELECT * FROM products WHERE name ILIKE $1 ORDER BY id", [`%${q}%`])
+              : await query<Product>("SELECT * FROM products ORDER BY id");
+            return NextResponse.json(products);
+          }
+
+          // CREATE  POST /api/products   body: { name, price, stock }
+          export async function POST(req: NextRequest) {
+            const { name, price, stock = 0 } = await req.json();
+            const [created] = await query<Product>(
+              "INSERT INTO products (name, price, stock) VALUES ($1, $2, $3) RETURNING *",
+              [name, price, stock]
+            );
+            return NextResponse.json(created, { status: 201 });
+          }
+        </script>
+        <script type="text/plain" class="code" data-lang="ts" data-title="app/api/products/[id]/route.ts">
+          import { NextRequest, NextResponse } from "next/server";
+          import { query } from "@/lib/db";
+          import type { Product } from "../route";
+
+          type Ctx = { params: Promise<{ id: string }> };
+
+          export async function GET(_req: NextRequest, { params }: Ctx) {
+            const { id } = await params;
+            const [product] = await query<Product>("SELECT * FROM products WHERE id = $1", [id]);
+            if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
+            return NextResponse.json(product);
+          }
+
+          export async function PATCH(req: NextRequest, { params }: Ctx) {
+            const { id } = await params;
+            const { name, price, stock } = await req.json();
+            // COALESCE keeps the old value when the new one is null → partial update
+            const [updated] = await query<Product>(
+              `UPDATE products
+                 SET name  = COALESCE($1, name),
+                     price = COALESCE($2, price),
+                     stock = COALESCE($3, stock)
+               WHERE id = $4
+               RETURNING *`,
+              [name ?? null, price ?? null, stock ?? null, id]
+            );
+            if (!updated) return NextResponse.json({ error: "Not found" }, { status: 404 });
+            return NextResponse.json(updated);
+          }
+
+          export async function DELETE(_req: NextRequest, { params }: Ctx) {
+            const { id } = await params;
+            const rows = await query("DELETE FROM products WHERE id = $1 RETURNING id", [id]);
+            if (rows.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+            return new Response(null, { status: 204 });
+          }
+        </script>
+        <div class="callout info"><i class="bi bi-info-circle"></i><div><strong class="t">NUMERIC comes back as a string</strong><code>pg</code> returns <code>NUMERIC</code>/<code>DECIMAL</code> values as strings so they don't lose precision. Convert them with <code>Number(row.price)</code> only when that's safe, or use a decimal library for money.</div></div>
+      </section>
+
+      <section class="note-section" id="sql-injection" data-level="inter" data-title="SQL injection">
+        <h2><span class="sec-icon"><i class="bi bi-bug"></i></span>SQL injection — the #1 mistake <span class="lvl inter">Intermediate</span></h2>
+        <p>If you <b>glue user input into a SQL string</b>, an attacker can type SQL that changes your query.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-exclamation-octagon"></i> What the attacker types</div>
+          <div class="flow">
+            <div class="node bad"><i class="bi bi-person-x"></i>Input<small><code>'; DROP TABLE users; --</code></small></div>
+            <div class="arrow">string concat</div>
+            <div class="node bad"><i class="bi bi-fire"></i>Your query becomes<small>SELECT … WHERE name = ''; DROP TABLE users; --'</small></div>
+            <div class="arrow">runs</div>
+            <div class="node bad"><i class="bi bi-trash"></i>Table deleted</div>
+          </div>
+        </div>
+        <div class="code-pair">
+          <div>
+            <div class="lbl bad"><i class="bi bi-x-circle-fill"></i> Vulnerable</div>
+            <script type="text/plain" class="code" data-lang="ts">
+              // ❌ NEVER do this
+              const name = req.nextUrl.searchParams.get("name");
+              await db.query(`SELECT * FROM users WHERE name = '${name}'`);
+            </script>
+          </div>
+          <div>
+            <div class="lbl good"><i class="bi bi-check-circle-fill"></i> Safe — parameterized</div>
+            <script type="text/plain" class="code" data-lang="ts">
+              // ✅ $1 is a placeholder; value is sent separately
+              const name = req.nextUrl.searchParams.get("name");
+              await db.query("SELECT * FROM users WHERE name = $1", [name]);
+            </script>
+          </div>
+        </div>
+        <div class="callout tip"><i class="bi bi-lightbulb"></i><div><strong class="t">Rule</strong>Values always go in <code>$1, $2…</code> placeholders. You can't parameterize identifiers such as table names, column names or <code>ORDER BY</code> direction. For those, check the input against an <b>allow-list</b>: <code>["name","price"].includes(sort)</code>.</div></div>
+      </section>
+
+      <section class="note-section" id="validation" data-level="inter" data-title="Validation with Zod">
+        <h2><span class="sec-icon"><i class="bi bi-check2-all"></i></span>Validating input with Zod <span class="lvl inter">Intermediate</span></h2>
+        <p>Never trust the client. <b>Zod</b> checks the shape of the data at runtime and gives you TypeScript types from the same schema.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-funnel"></i> Validation gate</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-box-arrow-in-right"></i>Raw body<small>unknown</small></div>
+            <div class="arrow">safeParse</div>
+            <div class="node hl"><i class="bi bi-funnel"></i>Zod schema</div>
+            <div class="arrow">valid ✓</div>
+            <div class="node ok"><i class="bi bi-database-add"></i>Typed data → DB</div>
+          </div>
+          <p class="diagram-caption">If validation fails, return <b>400 / 422</b> with the error list. Bad data never reaches the database.</p>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="lib/validators.ts">
+          import { z } from "zod";
+
+          export const productSchema = z.object({
+            name: z.string().trim().min(2, "Name too short").max(120),
+            price: z.coerce.number().nonnegative(),
+            stock: z.coerce.number().int().min(0).default(0),
+          });
+
+          export const productUpdateSchema = productSchema.partial(); // all fields optional
+
+          export type ProductInput = z.infer<typeof productSchema>;   // 🎉 free TS type
+        </script>
+        <script type="text/plain" class="code" data-lang="ts" data-title="app/api/products/route.ts (POST with validation)">
+          import { productSchema } from "@/lib/validators";
+
+          export async function POST(req: NextRequest) {
+            const parsed = productSchema.safeParse(await req.json().catch(() => ({})));
+            if (!parsed.success) {
+              return NextResponse.json({ errors: parsed.error.flatten().fieldErrors }, { status: 422 });
+            }
+            const { name, price, stock } = parsed.data;               // fully typed
+            const [created] = await query<Product>(
+              "INSERT INTO products (name, price, stock) VALUES ($1,$2,$3) RETURNING *",
+              [name, price, stock]
+            );
+            return NextResponse.json(created, { status: 201 });
+          }
+        </script>
+      </section>
+
+      <section class="note-section" id="server-actions" data-level="inter" data-title="Server Actions + DB">
+        <h2><span class="sec-icon"><i class="bi bi-lightning-charge"></i></span>Server Actions with the database <span class="lvl inter">Intermediate</span></h2>
+        <p>When the only caller is <b>your own UI</b>, a Server Action is usually simpler than an API route. You don't need to write a <code>fetch</code> or define a URL.</p>
+        <script type="text/plain" class="code" data-lang="ts" data-title="app/products/actions.ts">
+          "use server";
+          import { revalidatePath } from "next/cache";
+          import { redirect } from "next/navigation";
+          import { query } from "@/lib/db";
+          import { productSchema } from "@/lib/validators";
+          import { getSession } from "@/lib/auth";
+
+          export async function createProduct(_prev: unknown, formData: FormData) {
+            const session = await getSession();
+            if (!session) return { error: "Please log in" };            // 🔐 always check auth
+
+            const parsed = productSchema.safeParse(Object.fromEntries(formData));
+            if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors };
+
+            const { name, price, stock } = parsed.data;
+            await query("INSERT INTO products (name, price, stock) VALUES ($1,$2,$3)", [name, price, stock]);
+
+            revalidatePath("/products");   // refresh list page
+            redirect("/products");          // navigate after success
+          }
+
+          export async function deleteProduct(id: number) {
+            await query("DELETE FROM products WHERE id = $1", [id]);
+            revalidatePath("/products");
+          }
+        </script>
+        <script type="text/plain" class="code" data-lang="tsx" data-title="app/products/page.tsx (Server Component reading DB)">
+          import { query } from "@/lib/db";
+          import { deleteProduct } from "./actions";
+
+          export default async function ProductsPage() {
+            const products = await query<{ id: number; name: string; price: string }>(
+              "SELECT id, name, price FROM products ORDER BY created_at DESC"
+            );
+            return (
+              <table className="table table-hover">
+                <tbody>
+                  {products.map((p) => (
+                    <tr key={p.id}>
+                      <td>{p.name}</td><td>₹{p.price}</td>
+                      <td>
+                        {/* .bind pre-fills the id argument */}
+                        <form action={deleteProduct.bind(null, p.id)}>
+                          <button className="btn btn-sm btn-outline-danger"><i className="bi bi-trash" /></button>
+                        </form>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            );
+          }
+        </script>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>Use…</th><th>When</th></tr></thead>
+            <tbody>
+              <tr><td><i class="bi bi-file-earmark-richtext"></i> Server Component</td><td>Reading data to show on a page</td></tr>
+              <tr><td><i class="bi bi-lightning"></i> Server Action</td><td>Forms and mutations triggered from your own Next.js UI</td></tr>
+              <tr><td><i class="bi bi-plug"></i> Route Handler</td><td>Public/external API, mobile apps, webhooks (Stripe, GitHub), file downloads, client-side fetching with SWR</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="note-section" id="orm" data-level="inter" data-title="Using an ORM (Prisma)">
+        <h2><span class="sec-icon"><i class="bi bi-boxes"></i></span>Using an ORM (Prisma) <span class="lvl inter">Intermediate</span></h2>
+        <p>An <span class="kw">ORM</span> (Object-Relational Mapper) lets you query the database with typed JavaScript methods instead of raw SQL strings. It also manages <b>migrations</b>, which are version-controlled changes to your tables.</p>
+        <div class="vs">
+          <div class="side"><h5><i class="bi bi-code-slash"></i> Raw SQL (pg)</h5><ul><li>Full control, fastest</li><li>You learn real SQL</li><li>Manual types &amp; migrations</li></ul></div>
+          <div class="mid">VS</div>
+          <div class="side"><h5><i class="bi bi-boxes"></i> ORM (Prisma / Drizzle)</h5><ul><li>Auto-complete and type safety</li><li>Migrations built in</li><li>Complex queries can be awkward</li></ul></div>
+        </div>
+        <script type="text/plain" class="code" data-lang="bash" data-title="terminal">
+          npm install -D prisma
+          npm install @prisma/client
+          npx prisma init          # creates prisma/schema.prisma + DATABASE_URL in .env
+        </script>
+        <script type="text/plain" class="code" data-lang="prisma" data-title="prisma/schema.prisma">
+          model User {
+            id        Int       @id @default(autoincrement())
+            email     String    @unique
+            name      String?
+            password  String
+            orders    Order[]                        // one user → many orders
+            createdAt DateTime  @default(now())
+          }
+
+          model Order {
+            id      Int      @id @default(autoincrement())
+            total   Decimal  @db.Decimal(10, 2)
+            user    User     @relation(fields: [userId], references: [id])
+            userId  Int
+          }
+        </script>
+        <script type="text/plain" class="code" data-lang="bash" data-title="terminal">
+          npx prisma migrate dev --name init   # creates SQL migration + applies it + generates client
+          npx prisma studio                    # visual DB browser at localhost:5555
+        </script>
+        <script type="text/plain" class="code" data-lang="ts" data-title="lib/prisma.ts + usage">
+          import { PrismaClient } from "@prisma/client";
+
+          const g = globalThis as unknown as { prisma?: PrismaClient };
+          export const prisma = g.prisma ?? new PrismaClient();
+          if (process.env.NODE_ENV !== "production") g.prisma = prisma;
+
+          // ---- usage ----
+          const user = await prisma.user.create({ data: { email: "a@b.com", password: hash } });
+          const users = await prisma.user.findMany({
+            where: { email: { contains: "@gmail" } },
+            include: { orders: true },            // JOIN
+            orderBy: { createdAt: "desc" },
+            take: 10,
+          });
+          await prisma.user.update({ where: { id: 1 }, data: { name: "Asha" } });
+          await prisma.user.delete({ where: { id: 1 } });
+        </script>
+        <div class="callout info"><i class="bi bi-info-circle"></i><div><strong class="t">Versions change</strong>Newer Prisma releases (v7+) moved to a <code>prisma.config.ts</code> file and driver adapters (<code>@prisma/adapter-pg</code>). The <code>schema.prisma</code> models and the query API shown above stay the same. Follow the setup guide for the version you install. <b>Drizzle ORM</b> is a popular SQL-like alternative.</div></div>
+      </section>
+
+      <section class="note-section" id="errors" data-level="inter" data-title="Error handling">
+        <h2><span class="sec-icon"><i class="bi bi-exclamation-diamond"></i></span>Error handling <span class="lvl inter">Intermediate</span></h2>
+        <p>Return <b>consistent JSON errors</b>, map known database errors to the right status codes, and never show stack traces to users.</p>
+        <script type="text/plain" class="code" data-lang="ts" data-title="lib/api.ts">
+          import { NextResponse } from "next/server";
+          import { ZodError } from "zod";
+
+          export class HttpError extends Error {
+            constructor(public status: number, message: string) { super(message); }
+          }
+
+          // Wrap any handler → automatic try/catch
+          export function handler<T extends unknown[]>(fn: (...args: T) => Promise<Response>) {
+            return async (...args: T) => {
+              try {
+                return await fn(...args);
+              } catch (err: any) {
+                if (err instanceof HttpError) return NextResponse.json({ error: err.message }, { status: err.status });
+                if (err instanceof ZodError) return NextResponse.json({ error: err.flatten() }, { status: 422 });
+                if (err?.code === "23505") return NextResponse.json({ error: "Already exists" }, { status: 409 }); // unique_violation
+                if (err?.code === "23503") return NextResponse.json({ error: "Related record missing" }, { status: 400 }); // foreign_key_violation
+                console.error(err);                                        // log full error on server
+                return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+              }
+            };
+          }
+
+          // usage:  export const GET = handler(async (req: NextRequest) => { ... });
+        </script>
+        <div class="table-responsive">
+          <table class="table table-notes mb-0">
+            <thead><tr><th>PG code</th><th>Name</th><th>HTTP</th></tr></thead>
+            <tbody>
+              <tr><td><code>23505</code></td><td>unique_violation</td><td>409 Conflict</td></tr>
+              <tr><td><code>23503</code></td><td>foreign_key_violation</td><td>400 / 409</td></tr>
+              <tr><td><code>23502</code></td><td>not_null_violation</td><td>400</td></tr>
+              <tr><td><code>22P02</code></td><td>invalid_text_representation (e.g. "abc" as INT)</td><td>400</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="level-banner adv"><i class="bi bi-3-circle-fill"></i><div>Level 3 — Advanced<small>Authentication, route protection, transactions, pagination, performance and architecture</small></div></div>
+
+      <section class="note-section" id="auth" data-level="adv" data-title="Authentication">
+        <h2><span class="sec-icon"><i class="bi bi-shield-lock"></i></span>Authentication (hash + JWT cookie) <span class="lvl adv">Advanced</span></h2>
+        <div class="callout analogy"><i class="bi bi-ticket-perforated"></i><div><strong class="t">Concert wristband</strong>At the gate (login) you show your ID (password) once and get a <b>signed wristband</b> (a JWT in a cookie). After that, the guards (server) only check the wristband. They don't ask for your ID again.</div></div>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-key"></i> Login flow</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-person"></i>email + password</div>
+            <div class="arrow">POST /login</div>
+            <div class="node hl"><i class="bi bi-search"></i>Find user<small>SELECT by email</small></div>
+            <div class="arrow">bcrypt.compare</div>
+            <div class="node hl"><i class="bi bi-pen"></i>Sign JWT<small>{ userId, role }</small></div>
+            <div class="arrow">Set-Cookie</div>
+            <div class="node ok"><i class="bi bi-cookie"></i>httpOnly cookie<small>sent on every request</small></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="sql" data-title="users table">
+          CREATE TABLE users (
+            id            SERIAL PRIMARY KEY,
+            email         VARCHAR(255) UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role          VARCHAR(20) NOT NULL DEFAULT 'user',
+            created_at    TIMESTAMPTZ DEFAULT NOW()
+          );
+        </script>
+        <script type="text/plain" class="code" data-lang="ts" data-title="lib/auth.ts   (npm i jose bcryptjs)">
+          import "server-only";
+          import { SignJWT, jwtVerify } from "jose";
+          import { cookies } from "next/headers";
+          import bcrypt from "bcryptjs";
+
+          const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+          export type Session = { userId: number; role: "user" | "admin" };
+
+          export const hashPassword = (pw: string) => bcrypt.hash(pw, 12);    // 12 = cost factor
+          export const verifyPassword = (pw: string, hash: string) => bcrypt.compare(pw, hash);
+
+          export async function createSession(data: Session) {
+            const token = await new SignJWT(data)
+              .setProtectedHeader({ alg: "HS256" })
+              .setIssuedAt()
+              .setExpirationTime("7d")
+              .sign(secret);
+
+            (await cookies()).set("session", token, {
+              httpOnly: true,                                  // JS can't read it → XSS-safe
+              secure: process.env.NODE_ENV === "production",   // HTTPS only
+              sameSite: "lax",                                 // CSRF protection
+              path: "/",
+              maxAge: 60 * 60 * 24 * 7,
+            });
+          }
+
+          export async function getSession(): Promise<Session | null> {
+            const token = (await cookies()).get("session")?.value;
+            if (!token) return null;
+            try {
+              const { payload } = await jwtVerify(token, secret);
+              return payload as unknown as Session;
+            } catch {
+              return null;                                     // expired / tampered
+            }
+          }
+
+          export async function destroySession() {
+            (await cookies()).delete("session");
+          }
+        </script>
+        <script type="text/plain" class="code" data-lang="ts" data-title="app/api/auth/login/route.ts">
+          import { NextRequest, NextResponse } from "next/server";
+          import { z } from "zod";
+          import { query } from "@/lib/db";
+          import { verifyPassword, createSession } from "@/lib/auth";
+
+          const schema = z.object({ email: z.string().email(), password: z.string().min(8) });
+
+          export async function POST(req: NextRequest) {
+            const parsed = schema.safeParse(await req.json());
+            if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 422 });
+
+            const { email, password } = parsed.data;
+            const [user] = await query<{ id: number; password_hash: string; role: "user" | "admin" }>(
+              "SELECT id, password_hash, role FROM users WHERE email = $1", [email.toLowerCase()]
+            );
+            // same message for both cases → don't reveal which emails exist
+            if (!user || !(await verifyPassword(password, user.password_hash))) {
+              return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+            }
+            await createSession({ userId: user.id, role: user.role });
+            return NextResponse.json({ ok: true });
+          }
+        </script>
+        <div class="callout tip"><i class="bi bi-lightbulb"></i><div><strong class="t">Production tip</strong>Libraries like <b>Auth.js (NextAuth)</b>, <b>Better Auth</b> or <b>Clerk</b> handle OAuth (Google/GitHub), email links and session rotation for you. Learn the manual way first so you understand what they do.</div></div>
+      </section>
+
+      <section class="note-section" id="protect" data-level="adv" data-title="Protecting routes (proxy)">
+        <h2><span class="sec-icon"><i class="bi bi-door-closed"></i></span>Protecting routes: proxy / middleware <span class="lvl adv">Advanced</span></h2>
+        <p>A <span class="kw">proxy</span> (called <code>middleware</code> before Next.js 16) runs <b>before</b> a request reaches your page or API. Use it for quick checks such as redirecting logged-out users.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-shield"></i> Defense in depth</div>
+          <div class="flow">
+            <div class="node"><i class="bi bi-globe"></i>Request /dashboard</div>
+            <div class="arrow">1st check</div>
+            <div class="node hl"><i class="bi bi-door-closed"></i>proxy.ts<small>has session cookie?</small></div>
+            <div class="arrow">2nd check</div>
+            <div class="node hl"><i class="bi bi-person-check"></i>Page / Action / API<small>getSession() + role</small></div>
+            <div class="arrow">ok</div>
+            <div class="node ok"><i class="bi bi-database"></i>Data</div>
+          </div>
+          <p class="diagram-caption">Proxy is an <b>optimistic</b> first gate. <b>Always</b> check auth again where the data is read or changed.</p>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="proxy.ts   (project root — Next.js 16+; named middleware.ts with export function middleware in ≤15)">
+          import { NextRequest, NextResponse } from "next/server";
+          import { jwtVerify } from "jose";
+
+          const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+          const protectedPaths = ["/dashboard", "/admin", "/api/admin"];
+
+          export async function proxy(req: NextRequest) {
+            const { pathname } = req.nextUrl;
+            if (!protectedPaths.some((p) => pathname.startsWith(p))) return NextResponse.next();
+
+            const token = req.cookies.get("session")?.value;
+            try {
+              if (!token) throw new Error("no token");
+              const { payload } = await jwtVerify(token, secret);
+              if (pathname.startsWith("/admin") && payload.role !== "admin") {
+                return NextResponse.redirect(new URL("/403", req.url));
+              }
+              return NextResponse.next();
+            } catch {
+              const url = new URL("/login", req.url);
+              url.searchParams.set("next", pathname);          // come back after login
+              return NextResponse.redirect(url);
+            }
+          }
+
+          // Only run for these paths (skip static files, images…)
+          export const config = { matcher: ["/dashboard/:path*", "/admin/:path*", "/api/admin/:path*"] };
+        </script>
+      </section>
+
+      <section class="note-section" id="transactions" data-level="adv" data-title="Transactions">
+        <h2><span class="sec-icon"><i class="bi bi-arrow-left-right"></i></span>Transactions <span class="lvl adv">Advanced</span></h2>
+        <p>A <span class="kw">transaction</span> groups several queries so that <b>all succeed or none do</b>. A classic example is placing an order: create the order, reduce stock and charge the wallet. If any step fails, everything is undone.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-diagram-2"></i> All-or-nothing</div>
+          <div class="flow">
+            <div class="node hl"><i class="bi bi-play-circle"></i>BEGIN</div>
+            <div class="arrow"></div>
+            <div class="node"><i class="bi bi-cart-plus"></i>INSERT order</div>
+            <div class="arrow"></div>
+            <div class="node"><i class="bi bi-box-seam"></i>UPDATE stock</div>
+            <div class="arrow">all ok?</div>
+            <div class="node ok"><i class="bi bi-check-circle"></i>COMMIT<small>saved</small></div>
+            <div class="node bad"><i class="bi bi-arrow-counterclockwise"></i>ROLLBACK<small>on any error</small></div>
+          </div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="lib/orders.ts">
+          import { db } from "@/lib/db";
+
+          export async function placeOrder(userId: number, productId: number, qty: number) {
+            const client = await db.connect();          // ⚠️ one dedicated connection for the whole transaction
+            try {
+              await client.query("BEGIN");
+
+              // lock the row so two buyers can't take the last item at the same time
+              const { rows } = await client.query(
+                "SELECT price, stock FROM products WHERE id = $1 FOR UPDATE", [productId]
+              );
+              const product = rows[0];
+              if (!product || product.stock < qty) throw new Error("Out of stock");
+
+              const { rows: [order] } = await client.query(
+                "INSERT INTO orders (user_id, product_id, qty, total) VALUES ($1,$2,$3,$4) RETURNING id",
+                [userId, productId, qty, product.price * qty]
+              );
+              await client.query("UPDATE products SET stock = stock - $1 WHERE id = $2", [qty, productId]);
+
+              await client.query("COMMIT");
+              return order.id;
+            } catch (e) {
+              await client.query("ROLLBACK");
+              throw e;
+            } finally {
+              client.release();                          // ✅ always give the connection back
+            }
+          }
+        </script>
+        <script type="text/plain" class="code" data-lang="ts" data-title="Same thing with Prisma">
+          await prisma.$transaction(async (tx) => {
+            const p = await tx.product.update({ where: { id: productId }, data: { stock: { decrement: qty } } });
+            if (p.stock < 0) throw new Error("Out of stock");   // throwing → automatic rollback
+            await tx.order.create({ data: { userId, productId, qty, total: p.price.mul(qty) } });
+          });
+        </script>
+      </section>
+
+      <section class="note-section" id="pagination" data-level="adv" data-title="Pagination &amp; filtering">
+        <h2><span class="sec-icon"><i class="bi bi-list-ol"></i></span>Pagination, sorting &amp; filtering <span class="lvl adv">Advanced</span></h2>
+        <div class="vs">
+          <div class="side"><h5><i class="bi bi-123"></i> Offset pagination</h5><ul><li><code>LIMIT 20 OFFSET 40</code></li><li>Easy and supports "page 3 of 10"</li><li>Gets slow on deep pages, and rows can shift between requests</li></ul></div>
+          <div class="mid">VS</div>
+          <div class="side" style="border-color:var(--accent)"><h5><i class="bi bi-cursor"></i> Cursor (keyset) pagination</h5><ul><li><code>WHERE id &lt; $last ORDER BY id DESC LIMIT 20</code></li><li>Fast at any depth because it uses the index</li><li>Good for infinite scroll; no "jump to page"</li></ul></div>
+        </div>
+        <script type="text/plain" class="code" data-lang="ts" data-title="app/api/products/route.ts (paginated + filtered + sorted)">
+          const SORTABLE = { name: "name", price: "price", newest: "created_at" } as const;
+
+          export async function GET(req: NextRequest) {
+            const sp = req.nextUrl.searchParams;
+            const page  = Math.max(1, Number(sp.get("page") ?? 1));
+            const limit = Math.min(100, Number(sp.get("limit") ?? 20));    // cap the limit!
+            const sortKey = (sp.get("sort") ?? "newest") as keyof typeof SORTABLE;
+            const sortCol = SORTABLE[sortKey] ?? "created_at";             // allow-list → safe
+            const dir = sp.get("dir") === "asc" ? "ASC" : "DESC";
+            const minPrice = sp.get("minPrice");
+
+            const where: string[] = [];
+            const params: unknown[] = [];
+            if (minPrice) { params.push(minPrice); where.push(`price >= $${params.length}`); }
+            const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+            params.push(limit, (page - 1) * limit);
+            const rows = await query(
+              `SELECT *, COUNT(*) OVER() AS total_count
+                 FROM products ${whereSql}
+                ORDER BY ${sortCol} ${dir}
+                LIMIT $${params.length - 1} OFFSET $${params.length}`,
+              params
+            );
+            const total = Number(rows[0]?.total_count ?? 0);
+            return NextResponse.json({ data: rows, page, limit, total, pages: Math.ceil(total / limit) });
+          }
+        </script>
+      </section>
+
+      <section class="note-section" id="performance" data-level="adv" data-title="Performance &amp; scaling">
+        <h2><span class="sec-icon"><i class="bi bi-speedometer2"></i></span>Performance &amp; scaling <span class="lvl adv">Advanced</span></h2>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="n-card"><div class="ic"><i class="bi bi-diagram-2"></i></div><h5>Avoid N+1 queries</h5><p>Don't run one query per item inside a loop. Use one <code>JOIN</code> or <code>WHERE id = ANY($1)</code> instead.</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic"><i class="bi bi-lightning"></i></div><h5>Add indexes</h5><p>Index the columns you filter or join on. Check with <code>EXPLAIN ANALYZE</code> (see the PostgreSQL page).</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic"><i class="bi bi-collection"></i></div><h5>Pooling in serverless</h5><p>Serverless functions can open too many connections. Use PgBouncer or a pooled URL (Neon, Supabase).</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic"><i class="bi bi-archive"></i></div><h5>Cache reads</h5><p>Cache data that rarely changes with Next.js caching (<code>revalidate</code> / <code>"use cache"</code>) or Redis.</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic"><i class="bi bi-funnel"></i></div><h5>Select only needed columns</h5><p>Avoid <code>SELECT *</code> on wide tables in hot paths.</p></div></div>
+          <div class="col-md-6"><div class="n-card"><div class="ic"><i class="bi bi-hourglass-split"></i></div><h5>Background jobs</h5><p>Send emails and process images in a queue so the request isn't blocked.</p></div></div>
+        </div>
+        <div class="code-pair mt-3">
+          <div>
+            <div class="lbl bad"><i class="bi bi-x-circle-fill"></i> N+1 (101 queries)</div>
+            <script type="text/plain" class="code" data-lang="ts">
+              const orders = await query("SELECT * FROM orders LIMIT 100");
+              for (const o of orders) {
+                o.user = (await query("SELECT * FROM users WHERE id=$1", [o.user_id]))[0];
+              }
+            </script>
+          </div>
+          <div>
+            <div class="lbl good"><i class="bi bi-check-circle-fill"></i> One JOIN (1 query)</div>
+            <script type="text/plain" class="code" data-lang="ts">
+              const orders = await query(`
+                SELECT o.*, u.name AS user_name
+                  FROM orders o
+                  JOIN users u ON u.id = o.user_id
+                 LIMIT 100`);
+            </script>
+          </div>
+        </div>
+      </section>
+
+      <section class="note-section" id="security" data-level="adv" data-title="Security checklist">
+        <h2><span class="sec-icon"><i class="bi bi-shield-check"></i></span>Security checklist <span class="lvl adv">Advanced</span></h2>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <ul class="list-unstyled">
+              <li class="mb-2"><i class="bi bi-check2-square yes me-2"></i>Parameterized queries everywhere</li>
+              <li class="mb-2"><i class="bi bi-check2-square yes me-2"></i>Validate every input (Zod)</li>
+              <li class="mb-2"><i class="bi bi-check2-square yes me-2"></i>Hash passwords with bcrypt or argon2, never store them in plain text</li>
+              <li class="mb-2"><i class="bi bi-check2-square yes me-2"></i>Put sessions in httpOnly + secure + sameSite cookies</li>
+              <li class="mb-2"><i class="bi bi-check2-square yes me-2"></i>Check auth <b>and</b> ownership: <code>WHERE id=$1 AND user_id=$2</code></li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <ul class="list-unstyled">
+              <li class="mb-2"><i class="bi bi-check2-square yes me-2"></i>Rate-limit login and public endpoints</li>
+              <li class="mb-2"><i class="bi bi-check2-square yes me-2"></i>Keep secrets in env vars, never in <code>NEXT_PUBLIC_</code></li>
+              <li class="mb-2"><i class="bi bi-check2-square yes me-2"></i>Use a DB user with minimum privileges (not superuser)</li>
+              <li class="mb-2"><i class="bi bi-check2-square yes me-2"></i>Return generic error messages and log the details server-side</li>
+              <li class="mb-2"><i class="bi bi-check2-square yes me-2"></i>Verify webhook signatures (Stripe and others)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout danger"><i class="bi bi-person-lock"></i><div><strong class="t">IDOR (Insecure Direct Object Reference)</strong>Being logged in isn't enough. If user A requests <code>/api/orders/55</code>, check that order 55 belongs to A: <code>SELECT * FROM orders WHERE id=$1 AND user_id=$2</code>.</div></div>
+      </section>
+
+      <section class="note-section" id="architecture" data-level="adv" data-title="Project architecture">
+        <h2><span class="sec-icon"><i class="bi bi-bricks"></i></span>Production project architecture <span class="lvl adv">Advanced</span></h2>
+        <p>As your app grows, split the code into <b>layers</b>, so route files stay thin and the business logic can be tested.</p>
+        <div class="diagram">
+          <div class="diagram-title"><i class="bi bi-stack"></i> Layered backend</div>
+          <div class="stack">
+            <div class="layer" style="--lc:#0ea5e9"><i class="bi bi-plug"></i><div><b>Transport layer</b><small>route.ts / actions.ts: parse the request, validate, call the service, format the response</small></div></div>
+            <div class="layer" style="--lc:#10b981"><i class="bi bi-gear"></i><div><b>Service layer</b><small>services/order.service.ts: business rules (stock check, pricing, emails)</small></div></div>
+            <div class="layer" style="--lc:#8b5cf6"><i class="bi bi-database-gear"></i><div><b>Data / repository layer</b><small>db/order.repo.ts: the only place that writes SQL</small></div></div>
+            <div class="layer" style="--lc:#336791"><i class="bi bi-database"></i><div><b>PostgreSQL</b><small>tables, constraints, indexes</small></div></div>
+          </div>
+        </div>
+        <div class="diagram tree-wrap">
+          <div class="diagram-title"><i class="bi bi-folder"></i> Suggested folders</div>
+          <ul class="tree">
+            <li><i class="bi bi-folder2-open"></i> src/
+              <ul>
+                <li><i class="bi bi-folder2-open"></i> app/ <span class="cm">pages + api routes + actions (thin)</span></li>
+                <li><i class="bi bi-folder2-open"></i> server/
+                  <ul>
+                    <li><i class="bi bi-folder2"></i> services/ <span class="cm">business logic</span></li>
+                    <li><i class="bi bi-folder2"></i> repositories/ <span class="cm">SQL queries</span></li>
+                    <li><i class="bi bi-filetype-ts"></i> db.ts <span class="cm">pool</span></li>
+                    <li><i class="bi bi-filetype-ts"></i> auth.ts</li>
+                  </ul></li>
+                <li><i class="bi bi-folder2"></i> lib/validators/ <span class="cm">zod schemas (shared with the frontend)</span></li>
+                <li><i class="bi bi-folder2"></i> components/</li>
+              </ul></li>
+            <li><i class="bi bi-folder2"></i> migrations/ <span class="cm">numbered SQL files or Prisma migrations</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <div class="level-banner basic" style="--lvl-basic:#8b5cf6"><i class="bi bi-star-fill" style="color:#8b5cf6"></i><div>Practice &amp; Review<small>Interview questions, exercises and a cheat sheet</small></div></div>
+
+      <section class="note-section" id="interview" data-level="extra" data-title="Interview questions">
+        <h2><span class="sec-icon"><i class="bi bi-chat-square-quote"></i></span>Interview questions</h2>
+        <div class="quiz" data-answer="a" data-explain="Values go into $1, $2… placeholders so the driver sends them separately from the SQL text.">
+          <p class="q">What is the correct way to stop SQL injection?</p>
+          <button data-opt="a">Parameterized queries ($1, $2)</button>
+          <button data-opt="b">Escape quotes with replace()</button>
+          <button data-opt="c">Use POST instead of GET</button>
+        </div>
+        <div class="accordion accordion-notes" id="faqBE">
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#be1">Route Handler vs Server Action?</button></h2>
+            <div id="be1" class="accordion-collapse collapse" data-bs-parent="#faqBE"><div class="accordion-body">A Server Action is an RPC-style function for mutations from your own React UI. It works with forms, progressive enhancement and <code>revalidatePath</code>. A Route Handler is an HTTP endpoint with a URL, for external clients, webhooks and client-side <code>fetch</code>.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#be2">Why use a connection pool?</button></h2>
+            <div id="be2" class="accordion-collapse collapse" data-bs-parent="#faqBE"><div class="accordion-body">Opening a PostgreSQL connection is expensive (TCP + auth + process fork), and the server allows only a limited number. A pool reuses a few open connections across many requests.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#be3">Why store the JWT in an httpOnly cookie instead of localStorage?</button></h2>
+            <div id="be3" class="accordion-collapse collapse" data-bs-parent="#faqBE"><div class="accordion-body">JavaScript can't read an httpOnly cookie, so an XSS attack can't steal the token. Add <code>sameSite</code> and <code>secure</code> to reduce CSRF risk and keep the cookie on HTTPS only.</div></div></div>
+          <div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#be4">What does SELECT … FOR UPDATE do?</button></h2>
+            <div id="be4" class="accordion-collapse collapse" data-bs-parent="#faqBE"><div class="accordion-body">It locks the selected rows until the transaction ends. Other transactions that try to update or lock those rows must wait, which prevents race conditions such as overselling stock.</div></div></div>
+        </div>
+        <h3><i class="bi bi-pencil-square"></i> Practice projects</h3>
+        <ol class="steps">
+          <li><b>Notes API</b>CRUD with <code>pg</code>, Zod validation and consistent errors.</li>
+          <li><b>Auth system</b>Register, login and logout with bcrypt + JWT cookie, plus a protected <code>/dashboard</code> using proxy.</li>
+          <li><b>Mini e-commerce</b>Products, cart and orders, using a transaction to place each order. Add pagination and filters.</li>
+        </ol>
+      </section>
+
+      <section class="note-section" id="cheatsheet" data-level="extra" data-title="Cheat sheet">
+        <h2><span class="sec-icon"><i class="bi bi-journal-code"></i></span>Cheat sheet</h2>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-plug"></i> Route Handler</h6><ul>
+            <li><code>export async function GET()</code><span>method</span></li><li><code>await req.json()</code><span>body</span></li><li><code>req.nextUrl.searchParams</code><span>query</span></li><li><code>await params</code><span>[id]</span></li><li><code>NextResponse.json(d,{status})</code><span>reply</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-database"></i> pg</h6><ul>
+            <li><code>new Pool({connectionString})</code><span>pool</span></li><li><code>db.query(sql, [v])</code><span>query</span></li><li><code>RETURNING *</code><span>get row back</span></li><li><code>db.connect()</code><span>tx client</span></li><li><code>client.release()</code><span>return it</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-shield-lock"></i> Auth</h6><ul>
+            <li><code>bcrypt.hash(pw, 12)</code><span>hash</span></li><li><code>new SignJWT().sign()</code><span>token</span></li><li><code>jwtVerify(t, secret)</code><span>verify</span></li><li><code>(await cookies()).set()</code><span>cookie</span></li></ul></div></div>
+          <div class="col-md-6"><div class="cheat"><h6><i class="bi bi-lightning"></i> Actions</h6><ul>
+            <li><code>"use server"</code><span>mark file</span></li><li><code>revalidatePath("/x")</code><span>refresh</span></li><li><code>redirect("/x")</code><span>navigate</span></li><li><code>action.bind(null, id)</code><span>pass args</span></li></ul></div></div>
+        </div>
+      </section>
+
+      <div class="row g-3 pager my-4">
+        <div class="col-md-6"><a href="frontend.html"><small><i class="bi bi-arrow-left"></i> Previous</small><b>Frontend with Next.js</b></a></div>
+        <div class="col-md-6 text-md-end"><a href="postgresql.html"><small>Next <i class="bi bi-arrow-right"></i></small><b>PostgreSQL</b></a></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<button class="toc-fab d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas"><i class="bi bi-list-ul me-1"></i> Contents</button>
+<div class="offcanvas offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocLabel">
+  <div class="offcanvas-header"><h5 class="offcanvas-title" id="tocLabel">Backend notes</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
+  <div class="offcanvas-body"><nav class="toc" data-toc style="position:static;max-height:none"></nav></div>
+</div>
+
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>
